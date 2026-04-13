@@ -42,11 +42,18 @@ window.GEN_COLORS = {
   Biomass:'#a5d6ff',Other:'#30363d','Other Renewable':'#5dade2',
 };
 
+function _isLight() {
+  return document.documentElement.dataset.theme === 'light';
+}
 function co2Fill(v) {
-  return d3.scaleLinear().domain([0,150,400,700]).range(['#1e4a2a','#2d4a1a','#4a3a0a','#4a1a1a']).clamp(true)(v);
+  return _isLight()
+    ? d3.scaleLinear().domain([0,150,400,700]).range(['#c6eed0','#faefc6','#faddd8','#f7c5c0']).clamp(true)(v)
+    : d3.scaleLinear().domain([0,150,400,700]).range(['#1e5c30','#3d5018','#5c3a0a','#5c1818']).clamp(true)(v);
 }
 function co2Stroke(v) {
-  return d3.scaleLinear().domain([0,150,400,700]).range(['#3fb950','#d29922','#f85149','#f85149']).clamp(true)(v);
+  return _isLight()
+    ? d3.scaleLinear().domain([0,150,400,700]).range(['#2da042','#c28a00','#e03428','#e03428']).clamp(true)(v)
+    : d3.scaleLinear().domain([0,150,400,700]).range(['#3fb950','#d29922','#f85149','#f85149']).clamp(true)(v);
 }
 
 let _projection, _svgG, _overviewByCode = {};
@@ -76,15 +83,14 @@ window.initMap = async function(onCountrySelect) {
   `);
 
   _svgG = svg.append('g');
-  _svgG.append('rect').attr('width', W).attr('height', H).attr('fill', '#070c14').attr('rx', 6);
+  _svgG.append('rect').attr('class', 'map-ocean').attr('width', W).attr('height', H).attr('rx', 6);
 
   _svgG.selectAll('.country')
     .data(euroFeatures)
     .join('path')
-    .attr('class', 'country')
+    .attr('class', 'country country-base')
     .attr('d', path)
-    .attr('fill', '#1a1f2e')
-    .attr('stroke', '#21262d')
+    .attr('stroke', 'var(--border)')
     .on('click', function(event, d) {
       const code = COUNTRY_MAP[String(+d.id)];
       if (!code) return;
@@ -94,7 +100,7 @@ window.initMap = async function(onCountrySelect) {
   _svgG.selectAll('.country-label')
     .data(euroFeatures.filter(d => CENTROIDS[COUNTRY_MAP[String(+d.id)]]))
     .join('text')
-    .style('font-size', '7.5px').style('fill', '#6e7681')
+    .attr('class', 'country-label').style('font-size', '7.5px').style('fill', 'var(--dim)')
     .style('pointer-events', 'none').style('text-anchor', 'middle')
     .attr('x', d => _projection(CENTROIDS[COUNTRY_MAP[String(+d.id)]])[0])
     .attr('y', d => _projection(CENTROIDS[COUNTRY_MAP[String(+d.id)]])[1] + 3)
@@ -175,5 +181,18 @@ window.drawFlowArrows = function(flows, fromCountry) {
       .attr('stroke', isExport ? '#f78166' : '#58a6ff')
       .attr('stroke-width', 1.2).attr('opacity', 0.55)
       .attr('marker-end', isExport ? 'url(#arrowOrange)' : 'url(#arrowBlue)');
+  });
+};
+
+window.updateMapTheme = function() {
+  if (!_svgG) return;
+  // Re-colour countries using current theme's co2Fill/co2Stroke
+  d3.selectAll('.country').each(function(d) {
+    const code = COUNTRY_MAP[String(+d.id)];
+    const info = _overviewByCode[code];
+    if (info) {
+      d3.select(this).attr('fill', co2Fill(info.co2_intensity)).attr('stroke', co2Stroke(info.co2_intensity));
+    }
+    // Countries with no CO2 data keep CSS fill via class
   });
 };

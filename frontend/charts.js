@@ -165,7 +165,24 @@ async function loadCountry(country) {
   }
 }
 
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.dataset.theme = saved;
+  document.getElementById('theme-toggle').textContent = saved === 'light' ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('theme', next);
+  document.getElementById('theme-toggle').textContent = next === 'light' ? '🌙' : '☀️';
+  window.updateMapTheme();
+}
+
 async function main() {
+  initTheme();
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
   const selectCountry = await window.initMap(async (country) => {
     await loadCountry(country);
     updateAIBriefing(country); // non-blocking
