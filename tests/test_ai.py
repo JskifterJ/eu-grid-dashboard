@@ -17,10 +17,10 @@ def test_build_prompt_contains_country():
 
 
 def test_ai_briefing_returns_text():
-    with patch("app.ai.Anthropic") as MockAnthropic:
-        mock_content = MagicMock()
-        mock_content.text = "Denmark is running 68% renewables today."
-        MockAnthropic.return_value.messages.create.return_value.content = [mock_content]
+    with patch("app.ai.genai") as mock_genai:
+        mock_response = MagicMock()
+        mock_response.text = "Denmark is running 68% renewables today."
+        mock_genai.GenerativeModel.return_value.generate_content.return_value = mock_response
 
         briefing = AIBriefing(api_key="test")
         result = briefing.generate(
@@ -36,8 +36,8 @@ def test_ai_briefing_returns_text():
 
 
 def test_ai_briefing_fallback_on_error():
-    with patch("app.ai.Anthropic") as MockAnthropic:
-        MockAnthropic.return_value.messages.create.side_effect = Exception("API error")
+    with patch("app.ai.genai") as mock_genai:
+        mock_genai.GenerativeModel.return_value.generate_content.side_effect = Exception("API error")
         briefing = AIBriefing(api_key="test")
         result = briefing.generate(
             country="DK", country_name="Denmark",

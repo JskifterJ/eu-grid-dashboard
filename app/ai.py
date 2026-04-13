@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from anthropic import Anthropic
+import google.generativeai as genai
 
 from app.models import GridSummary
 
@@ -32,7 +32,8 @@ Write in plain English. Be specific about the numbers. Note anything unusual or 
 
 class AIBriefing:
     def __init__(self, api_key: str):
-        self._client = Anthropic(api_key=api_key)
+        genai.configure(api_key=api_key)
+        self._model = genai.GenerativeModel("gemini-2.0-flash")
 
     def generate(
         self,
@@ -53,12 +54,11 @@ class AIBriefing:
             net_gw=net_gw,
         )
         try:
-            response = self._client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=300,
-                messages=[{"role": "user", "content": prompt}],
+            response = self._model.generate_content(
+                prompt,
+                generation_config={"max_output_tokens": 300, "temperature": 0.4},
             )
-            text = response.content[0].text.strip()
+            text = response.text.strip()
         except Exception:
             text = f"{country_name} grid data is currently available. Renewable share: {renewable_pct:.0f}%, CO₂ intensity: {co2_intensity:.0f} g/kWh, price: €{price_eur_mwh:.0f}/MWh."
 
@@ -70,5 +70,5 @@ class AIBriefing:
 
 
 def get_ai_briefing() -> AIBriefing:
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "")
     return AIBriefing(api_key=api_key)
