@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EU Grid Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson@3/dist/topojson.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="api.js" defer></script>
+  <script src="map.js" defer></script>
+  <script src="charts.js" defer></script>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <span class="nav-logo mono green">⚡ EU Grid Dashboard</span>
+    <div class="nav-right">
+      <span id="live-indicator"><span class="live-dot"></span><span class="live-label">live</span></span>
+      <select id="country-select" class="country-select">
+        <option value="DK">🇩🇰 Denmark</option>
+        <option value="DE">🇩🇪 Germany</option>
+        <option value="FR">🇫🇷 France</option>
+        <option value="NO">🇳🇴 Norway</option>
+        <option value="SE">🇸🇪 Sweden</option>
+        <option value="GB">🇬🇧 United Kingdom</option>
+        <option value="FI">🇫🇮 Finland</option>
+        <option value="CH">🇨🇭 Switzerland</option>
+        <option value="AT">🇦🇹 Austria</option>
+        <option value="NL">🇳🇱 Netherlands</option>
+        <option value="BE">🇧🇪 Belgium</option>
+        <option value="PL">🇵🇱 Poland</option>
+        <option value="ES">🇪🇸 Spain</option>
+        <option value="IT">🇮🇹 Italy</option>
+        <option value="CZ">🇨🇿 Czech Republic</option>
+        <option value="PT">🇵🇹 Portugal</option>
+        <option value="RO">🇷🇴 Romania</option>
+        <option value="GR">🇬🇷 Greece</option>
+        <option value="IE">🇮🇪 Ireland</option>
+        <option value="HU">🇭🇺 Hungary</option>
+      </select>
+      <span id="last-updated" class="updated"></span>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <div id="ai-card" class="ai-card">
+      <div class="ai-icon">✦</div>
+      <div>
+        <div id="ai-label" class="ai-label">AI Grid Briefing · loading…</div>
+        <div id="ai-text" class="ai-text">Fetching current grid conditions…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats-strip">
+      <div class="stat-item">
+        <div id="stat-renewable" class="stat-val green">—</div>
+        <div class="stat-label">Renewable share</div>
+        <div id="stat-renewable-delta" class="stat-delta"></div>
+      </div>
+      <div class="stat-item">
+        <div id="stat-price" class="stat-val yellow">—</div>
+        <div class="stat-label">Day-ahead €/MWh</div>
+        <div id="stat-price-delta" class="stat-delta"></div>
+      </div>
+      <div class="stat-item">
+        <div id="stat-co2" class="stat-val blue-light">—</div>
+        <div class="stat-label">CO₂ g/kWh</div>
+      </div>
+      <div class="stat-item">
+        <div id="stat-net" class="stat-val purple">—</div>
+        <div class="stat-label">Net flow GW</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="map-layout">
+      <div class="map-card">
+        <div class="card-title">
+          Europe — CO₂ intensity · click a country
+          <div class="legend">
+            <span>clean</span><div class="legend-bar"></div><span>dirty</span>
+            <span style="margin-left:10px;color:#58a6ff">→ import</span>
+            <span style="color:#f78166">→ export</span>
+          </div>
+        </div>
+        <svg id="map-svg"></svg>
+      </div>
+      <div id="side-panel" class="side-panel">
+        <div class="panel-card"><p class="dim small">Loading…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="card-title">Generation mix — now</div>
+        <div class="chart-wrap"><canvas id="chart-generation"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Day-ahead price — today (€/MWh)</div>
+        <div class="chart-wrap"><canvas id="chart-prices"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Cross-border flows — GW</div>
+        <div class="chart-wrap"><canvas id="chart-flows"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Renewable share — 7 day trend</div>
+        <div class="chart-wrap"><canvas id="chart-renewable"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note mono dim small container">data: ENTSO-E Transparency Platform · briefing: Claude API · built by <a href="https://jskifterj.github.io" class="dim">jskifterj</a></p>
+</main>
+
+</body>
+</html>
