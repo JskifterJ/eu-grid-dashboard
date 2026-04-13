@@ -1,17 +1,22 @@
+import os
+
 from fastapi import APIRouter, HTTPException, Query
 
 from app.cache import Cache
 from app.entso import get_entso_client, AREA_CODES, COUNTRY_NAMES
 from app.ai import get_ai_briefing
 from app.models import GenerationData, PriceData, FlowData, GridSummary, OverviewData
+import app.mock_data as mock
 
 router = APIRouter()
 
 entso_cache = Cache(ttl_seconds=900)
-ai_cache = Cache(ttl_seconds=900)
-overview_cache = Cache(ttl_seconds=900)
+ai_cache = Cache(ttl_seconds=3600)
+overview_cache = Cache(ttl_seconds=1800)
 
 SUPPORTED_COUNTRIES = set(AREA_CODES.keys())
+
+_DEMO_MODE = not os.environ.get("ENTSO_API_KEY", "").strip()
 
 
 def _validate_country(country: str) -> None:
@@ -28,7 +33,7 @@ def get_generation(country: str = Query(...)):
     cached = entso_cache.get(f"generation:{country}")
     if cached:
         return cached
-    data = get_entso_client().get_generation(country)
+    data = mock.mock_generation(country) if _DEMO_MODE else get_entso_client().get_generation(country)
     entso_cache.set(f"generation:{country}", data)
     return data
 
@@ -39,7 +44,7 @@ def get_prices(country: str = Query(...)):
     cached = entso_cache.get(f"prices:{country}")
     if cached:
         return cached
-    data = get_entso_client().get_prices(country)
+    data = mock.mock_prices(country) if _DEMO_MODE else get_entso_client().get_prices(country)
     entso_cache.set(f"prices:{country}", data)
     return data
 
@@ -50,7 +55,7 @@ def get_flows(country: str = Query(...)):
     cached = entso_cache.get(f"flows:{country}")
     if cached:
         return cached
-    data = get_entso_client().get_flows(country)
+    data = mock.mock_flows(country) if _DEMO_MODE else get_entso_client().get_flows(country)
     entso_cache.set(f"flows:{country}", data)
     return data
 
@@ -60,7 +65,7 @@ def get_overview():
     cached = overview_cache.get("overview")
     if cached:
         return cached
-    countries = get_entso_client().get_overview()
+    countries = mock.mock_overview() if _DEMO_MODE else get_entso_client().get_overview()
     data = OverviewData(countries=countries)
     overview_cache.set("overview", data)
     return data
@@ -73,10 +78,15 @@ def get_summary(country: str = Query(...)):
     if cached:
         return cached
 
-    client = get_entso_client()
-    gen = client.get_generation(country)
-    prices = client.get_prices(country)
-    flows = client.get_flows(country)
+    if _DEMO_MODE:
+        gen = mock.mock_generation(country)
+        prices = mock.mock_prices(country)
+        flows = mock.mock_flows(country)
+    else:
+        client = get_entso_client()
+        gen = client.get_generation(country)
+        prices = client.get_prices(country)
+        flows = client.get_flows(country)
 
     summary = get_ai_briefing().generate(
         country=country,

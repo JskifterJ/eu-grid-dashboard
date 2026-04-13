@@ -35,7 +35,8 @@ def _mock_summary():
 
 
 def test_generation_endpoint(client):
-    with patch("app.routes.entso_cache.get", return_value=None), \
+    with patch("app.routes._DEMO_MODE", False), \
+         patch("app.routes.entso_cache.get", return_value=None), \
          patch("app.routes.entso_cache.set"), \
          patch("app.routes.get_entso_client") as mock_factory:
         mock_factory.return_value.get_generation.return_value = _mock_generation()
@@ -46,7 +47,8 @@ def test_generation_endpoint(client):
 
 
 def test_prices_endpoint(client):
-    with patch("app.routes.entso_cache.get", return_value=None), \
+    with patch("app.routes._DEMO_MODE", False), \
+         patch("app.routes.entso_cache.get", return_value=None), \
          patch("app.routes.entso_cache.set"), \
          patch("app.routes.get_entso_client") as mock_factory:
         mock_factory.return_value.get_prices.return_value = _mock_prices()
@@ -56,7 +58,8 @@ def test_prices_endpoint(client):
 
 
 def test_summary_endpoint(client):
-    with patch("app.routes.ai_cache.get", return_value=None), \
+    with patch("app.routes._DEMO_MODE", False), \
+         patch("app.routes.ai_cache.get", return_value=None), \
          patch("app.routes.ai_cache.set"), \
          patch("app.routes.get_entso_client") as mock_entso, \
          patch("app.routes.get_ai_briefing") as mock_ai:
@@ -72,3 +75,14 @@ def test_summary_endpoint(client):
 def test_unknown_country_returns_400(client):
     response = client.get("/api/generation?country=XX")
     assert response.status_code == 400
+
+
+def test_demo_mode_generation(client):
+    """Verify mock data is served when _DEMO_MODE is True."""
+    with patch("app.routes._DEMO_MODE", True), \
+         patch("app.routes.entso_cache.get", return_value=None), \
+         patch("app.routes.entso_cache.set"):
+        response = client.get("/api/generation?country=DK")
+    assert response.status_code == 200
+    assert response.json()["country"] == "DK"
+    assert response.json()["renewable_pct"] > 0
