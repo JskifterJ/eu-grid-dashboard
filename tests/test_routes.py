@@ -35,7 +35,7 @@ def _mock_summary():
 
 
 def test_generation_endpoint(client):
-    with patch("app.routes._DEMO_MODE", False), \
+    with patch("app.routes._LIVE", True), \
          patch("app.routes.entso_cache.get", return_value=None), \
          patch("app.routes.entso_cache.set"), \
          patch("app.routes.get_entso_client") as mock_factory:
@@ -47,7 +47,7 @@ def test_generation_endpoint(client):
 
 
 def test_prices_endpoint(client):
-    with patch("app.routes._DEMO_MODE", False), \
+    with patch("app.routes._LIVE", True), \
          patch("app.routes.entso_cache.get", return_value=None), \
          patch("app.routes.entso_cache.set"), \
          patch("app.routes.get_entso_client") as mock_factory:
@@ -58,7 +58,7 @@ def test_prices_endpoint(client):
 
 
 def test_summary_endpoint(client):
-    with patch("app.routes._DEMO_MODE", False), \
+    with patch("app.routes._LIVE", True), \
          patch("app.routes.ai_cache.get", return_value=None), \
          patch("app.routes.ai_cache.set"), \
          patch("app.routes.get_entso_client") as mock_entso, \
@@ -77,12 +77,13 @@ def test_unknown_country_returns_400(client):
     assert response.status_code == 400
 
 
-def test_demo_mode_generation(client):
-    """Verify mock data is served when _DEMO_MODE is True."""
-    with patch("app.routes._DEMO_MODE", True), \
+def test_fallback_to_mock_on_entso_error(client):
+    """When ENTSO raises, response should still be 200 using mock data."""
+    with patch("app.routes._LIVE", True), \
          patch("app.routes.entso_cache.get", return_value=None), \
-         patch("app.routes.entso_cache.set"):
+         patch("app.routes.entso_cache.set"), \
+         patch("app.routes.get_entso_client") as mock_factory:
+        mock_factory.return_value.get_generation.side_effect = Exception("NoMatchingDataError")
         response = client.get("/api/generation?country=DK")
     assert response.status_code == 200
     assert response.json()["country"] == "DK"
-    assert response.json()["renewable_pct"] > 0

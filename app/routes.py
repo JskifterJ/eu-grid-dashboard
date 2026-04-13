@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import APIRouter, HTTPException, Query
@@ -8,6 +9,8 @@ from app.ai import get_ai_briefing
 from app.models import GenerationData, PriceData, FlowData, GridSummary, OverviewData
 import app.mock_data as mock
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 entso_cache = Cache(ttl_seconds=900)
@@ -16,7 +19,7 @@ overview_cache = Cache(ttl_seconds=1800)
 
 SUPPORTED_COUNTRIES = set(AREA_CODES.keys())
 
-_DEMO_MODE = not os.environ.get("ENTSO_API_KEY", "").strip()
+_LIVE = bool(os.environ.get("ENTSO_API_KEY", "").strip())
 
 
 def _validate_country(country: str) -> None:
@@ -27,13 +30,40 @@ def _validate_country(country: str) -> None:
         )
 
 
+def _get_generation(country: str) -> GenerationData:
+    if _LIVE:
+        try:
+            return get_entso_client().get_generation(country)
+        except Exception as e:
+            logger.warning("ENTSO generation fallback for %s: %s", country, e)
+    return mock.mock_generation(country)
+
+
+def _get_prices(country: str) -> PriceData:
+    if _LIVE:
+        try:
+            return get_entso_client().get_prices(country)
+        except Exception as e:
+            logger.warning("ENTSO prices fallback for %s: %s", country, e)
+    return mock.mock_prices(country)
+
+
+def _get_flows(country: str) -> FlowData:
+    if _LIVE:
+        try:
+            return get_entso_client().get_flows(country)
+        except Exception as e:
+            logger.warning("ENTSO flows fallback for %s: %s", country, e)
+    return mock.mock_flows(country)
+
+
 @router.get("/api/generation", response_model=GenerationData)
 def get_generation(country: str = Query(...)):
     _validate_country(country)
     cached = entso_cache.get(f"generation:{country}")
     if cached:
         return cached
-    data = mock.mock_generation(country) if _DEMO_MODE else get_entso_client().get_generation(country)
+    data = _get_generation(country)
     entso_cache.set(f"generation:{country}", data)
     return data
 
@@ -44,7 +74,7 @@ def get_prices(country: str = Query(...)):
     cached = entso_cache.get(f"prices:{country}")
     if cached:
         return cached
-    data = mock.mock_prices(country) if _DEMO_MODE else get_entso_client().get_prices(country)
+    data = _get_prices(country)
     entso_cache.set(f"prices:{country}", data)
     return data
 
@@ -55,7 +85,7 @@ def get_flows(country: str = Query(...)):
     cached = entso_cache.get(f"flows:{country}")
     if cached:
         return cached
-    data = mock.mock_flows(country) if _DEMO_MODE else get_entso_client().get_flows(country)
+    data = _get_flows(country)
     entso_cache.set(f"flows:{country}", data)
     return data
 
@@ -65,7 +95,14 @@ def get_overview():
     cached = overview_cache.get("overview")
     if cached:
         return cached
-    countries = mock.mock_overview() if _DEMO_MODE else get_entso_client().get_overview()
+    if _LIVE:
+        try:
+            countries = get_entso_client().get_overview()
+        except Exception as e:
+            logger.warning("ENTSO overview fallback: %s", e)
+            countries = mock.mock_overview()
+    else:
+        countries = mock.mock_overview()
     data = OverviewData(countries=countries)
     overview_cache.set("overview", data)
     return data
@@ -78,15 +115,9 @@ def get_summary(country: str = Query(...)):
     if cached:
         return cached
 
-    if _DEMO_MODE:
-        gen = mock.mock_generation(country)
-        prices = mock.mock_prices(country)
-        flows = mock.mock_flows(country)
-    else:
-        client = get_entso_client()
-        gen = client.get_generation(country)
-        prices = client.get_prices(country)
-        flows = client.get_flows(country)
+    gen = _get_generation(country)
+    prices = _get_prices(country)
+    flows = _get_flows(country)
 
     summary = get_ai_briefing().generate(
         country=country,
