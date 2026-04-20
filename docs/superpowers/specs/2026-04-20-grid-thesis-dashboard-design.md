@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-Transform the existing EU Grid Dashboard from a passive status-reporting dashboard into an **opinionated, thesis-driven scroll experience** that works as a flagship portfolio piece for **technical sales / solutions-engineer, product management, and applied-AI-engineer roles**. Concurrently link it to the existing `gpu_industry` repository so the two form a single connected narrative about **grid decarbonization and AI compute siting in Europe**.
+Transform the existing EU Grid Dashboard from a passive status-reporting dashboard into an **opinionated, thesis-driven scroll experience** that works as a flagship portfolio piece for **technical sales / solutions-engineer, product management, and applied-AI-engineer roles**. Concurrently link it to the existing `gpu_industry` repository so the two form a single connected narrative about **grid decarbonization and AI compute siting in Europe** — covering both training and the fast-growing inference workload.
 
 The finished artifact must demonstrate:
 - Product thinking (a thesis, a user flow, a shareable simulator).
@@ -25,11 +25,26 @@ The artifact argues:
 2. AI compute is a massive, relocatable, price-sensitive new load — precisely the kind that can chase clean electrons.
 3. The optimal *where and when* for training shifts hourly. The dashboard proves it by scoring European countries live and letting the reader simulate a workload.
 
-## 3. Out of scope (deliberately)
+## 3. Workload scope — training **and** inference
 
-- Per-zone drill-downs inside a country (we aggregate multi-zone countries and footnote; we do not build a zone-level UI).
-- Real-time carbon matching / 24/7 CFE accounting (interesting but too deep for scope).
-- Inference workloads (scope is training-shaped long-running loads; inference economics are linked-to via `gpu_industry` but not modeled here).
+The simulator must cover **both** training (long-running, relocatable, price-sensitive) and inference (latency-sensitive, geographically sticky, the larger workload by volume). This is important because inference will dominate datacenter compute demand this decade — per IEA, global datacenter electricity is tracking **415 TWh (2024) → 945 TWh (2030)**, with AI workloads growing **+30%/yr** vs +9%/yr for non-AI; AI-server share of datacenter electricity rises from **21% → 44%** in the same window, and Gartner projects **40% of AI datacenters power-constrained by 2027**. By 2035 IEA's lift-off scenario puts datacenters at ~**1,700 TWh (~4.4% global electricity)**. Inference is a stronger claim on the story than training — and our simulator reflects that.
+
+The two workload modes differ materially:
+
+| | Training | Inference |
+|---|---|---|
+| Dominant cost driver | Cost per MWh + carbon | Latency + utilization, secondarily cost |
+| Relocatable to cleanest grid? | Yes, across Europe | Constrained by latency-to-user |
+| Dominant hardware bottleneck | Compute (TFLOPS, interconnect) | Memory bandwidth (HBM) |
+| Silicon | NVIDIA-dominant | Fragmenting: NVIDIA + Groq/LPU + MI300X + Ascend |
+
+The simulator exposes a **workload-type selector** (Training / Inference). Training mode optimizes for CSS-weighted cleanliness-and-cost; Inference mode adds a *latency penalty* that attenuates far-from-user countries (configurable "serving region" = Central/Western/Northern/Southern Europe with a coarse haversine-to-population-centroid penalty).
+
+### Deliberately out of scope
+
+- Per-zone drill-downs inside a country (we aggregate and footnote; no zone-level UI).
+- Real-time carbon matching / 24/7 CFE accounting.
+- GPU-SKU-level modeling (H100 vs B200 vs MI300X vs Groq). We assume a parameterized `MW drawn` and let the user set it; the `gpu_industry` strategic backdrop covers hardware specifics.
 - Offline mobile (responsive fine; no PWA).
 
 ## 4. Narrative page structure (scroll, not dashboard)
@@ -83,14 +98,24 @@ PEF is applied **only** to the generation-mix visualization via an explicit UI t
 
 ## 7. Compute-siting simulator
 
-**Inputs:** country, MW, hours, start-hour (defaults to now).
+**Inputs:**
+- Workload type: **Training** or **Inference** (see §3).
+- Country (or "let me pick the best").
+- MW drawn (default 10 for training, 1 for inference).
+- Hours (default 6 for training, 24 for inference — since inference is continuous).
+- Start-hour (defaults to now).
+- Inference-only: serving region (coarse: Central / Western / Northern / Southern / Iberian Europe). Used to apply a latency penalty against candidate countries.
+
 **Outputs:**
 - Current-hour emissions (tCO₂) = MW × h × g/kWh / 1000.
 - Current-hour cost (€) = MW × h × €/MWh.
-- Best-hour-next-24h equivalents, using the forecast.
-- Delta vs "same workload in default AI hub" (Germany and Ireland are selectable comparison baselines; Germany default).
-- CSS percentile ranking at chosen hour.
+- Best-hour-next-24h equivalents from the forecast (training only; inference is continuous so the "schedule" knob is degenerate).
+- Delta vs "same workload in default AI hub" (Germany default, Ireland selectable).
+- CSS percentile at chosen hour (inference: *latency-adjusted* CSS).
+- For inference: a small legend explaining that CSS is attenuated by serving-region latency so countries physically far from the user aren't ranked first.
 - Shareable permalink encoding all inputs + the exact as-of timestamp for reproducibility.
+
+**Latency penalty for inference (simple, defensible):** candidate country `c`, serving-region centroid `r`. `penalty(c,r) = max(0, (dist_km(c,r) − 500) / 2500)` clamped to [0, 0.4]. Latency-adjusted CSS = raw CSS × (1 − penalty). 500 km free-zone reflects ~real EU CDN experience; the 2500 km slope makes the far edges of the continent lose ~40 points of CSS. Distances pre-computed at build time from a small fixed centroid table.
 
 ## 8. Backend architecture
 
@@ -178,7 +203,8 @@ Strategic Backdrop section pulls one pull-quote + image each from:
 - `strategy_value_chain_master.html`
 - `strategy_competitor_intelligence.html`
 - `strategy_inference_economics.html`
-- `pres3_gpu-trends-positioning-deck.html`
+- `pres3_gpu-trends-positioning-deck.html` (specifically the IEA 415 → 945 TWh datacenter electricity chart, and the "inference dominates" framing — these provide the quantitative backdrop for the dashboard's thesis)
+- `(pres3)inference-compute-deck.html` — linked from the Analyst Note when the simulator is in Inference mode.
 
 ## 11. Rigour / show-your-work layer
 
@@ -190,19 +216,24 @@ Strategic Backdrop section pulls one pull-quote + image each from:
 - **`docs/adr/0004-scroll-essay-over-dashboard-grid.md`** — form follows thesis.
 - **Tests:** `test_scoring.py` (normalization edge cases, weights-sum-to-100 invariant), `test_forecast.py` (MAPE correctness, seasonal baseline determinism), `test_simulator.py` (emissions arithmetic, percentile), `test_briefing.py` (schema + happy-path RAG selection).
 
-## 12. Build sequence
+## 12. Build sequence — split into two implementation plans
 
-Each step is independently demonstrable and leaves the site working:
+Each step is independently demonstrable and leaves the site working. Splitting into two plans to keep each review-checkpointable and committable.
 
-1. **Foundations** — backend refactor. `scoring.py`, `forecast.py`, `simulator.py`, `historical.py`, `primary_energy.py`, new endpoints with tests. No UI change.
+### Plan A — Foundations, visual reset, thesis hero (≈ first half)
+
+1. **Foundations** — backend refactor. `scoring.py`, `forecast.py`, `simulator.py` (training + inference modes, latency penalty), `historical.py`, `primary_energy.py`, new endpoints with tests. No UI change.
 2. **Visual reset** — Editorial aesthetic migration. Same features, new typography/layout/color.
-3. **Thesis hero + live ranking strip** with weights presets.
-4. **Interactive map upgrade** — hour-scrub, forecast region styling, AI-compute lens, multi-zone aggregation.
-5. **Compute-siting simulator** — the centerpiece.
+3. **Thesis hero + live ranking strip** with weights presets and workload-mode toggle.
+
+### Plan B — Interactive centerpiece, integration, rigour (≈ second half)
+
+4. **Interactive map upgrade** — hour-scrub, forecast region styling, AI-compute lens, multi-zone aggregation, workload-mode-aware coloring.
+5. **Compute-siting simulator UI** — the centerpiece; training + inference modes; shareable permalinks.
 6. **Forecast + eval panel.**
-7. **Historical context strip + Strategic backdrop** (pull-quote cards).
-8. **Structured analyst-note briefing** with pragmatic RAG over `gpu_industry`.
-9. **Portfolio hub + gpu_industry light edits** — cross-links, thesis section.
+7. **Historical context strip + Strategic backdrop** (pull-quote cards including IEA 415 → 945 TWh chart reference).
+8. **Structured analyst-note briefing** with pragmatic RAG over `gpu_industry`; inference mode surfaces inference-specific quotes.
+9. **Portfolio hub + gpu_industry light edits** — cross-links, thesis section on `jskifterj.github.io`.
 10. **Rigour layer** — README, methodology.md, 4 ADRs, test expansion, domain-credibility fixes.
 
 ## 13. Risks & mitigations
