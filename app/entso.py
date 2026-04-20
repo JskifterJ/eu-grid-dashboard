@@ -56,28 +56,32 @@ DISPLAY_MAP: dict[str, str] = {
     "Other": "Other",
 }
 
-AREA_CODES: dict[str, str] = {
-    "DE": "DE_LU",
-    "FR": "FR",
-    "GB": "GB",
-    "NO": "NO_1",
-    "SE": "SE_3",
-    "DK": "DK_1",
-    "FI": "FI",
-    "CH": "CH",
-    "AT": "AT",
-    "NL": "NL",
-    "BE": "BE",
-    "PL": "PL",
-    "ES": "ES",
-    "IT": "IT_NORD",
-    "CZ": "CZ",
-    "PT": "PT",
-    "RO": "RO",
-    "GR": "GR",
-    "IE": "IE_SEM",
-    "HU": "HU",
+AREA_CODES: dict[str, list[str]] = {
+    "DE": ["DE_LU"],
+    "FR": ["FR"],
+    "GB": ["GB"],
+    "NO": ["NO_1", "NO_2", "NO_3", "NO_4", "NO_5"],
+    "SE": ["SE_1", "SE_2", "SE_3", "SE_4"],
+    "DK": ["DK_1", "DK_2"],
+    "FI": ["FI"],
+    "CH": ["CH"],
+    "AT": ["AT"],
+    "NL": ["NL"],
+    "BE": ["BE"],
+    "PL": ["PL"],
+    "ES": ["ES"],
+    "IT": ["IT_NORD", "IT_CNOR", "IT_CSUD", "IT_SUD", "IT_SICI", "IT_SARD"],
+    "CZ": ["CZ"],
+    "PT": ["PT"],
+    "RO": ["RO"],
+    "GR": ["GR"],
+    "IE": ["IE_SEM"],
+    "HU": ["HU"],
 }
+
+
+def zones_for(country: str) -> list[str]:
+    return AREA_CODES[country]
 
 COUNTRY_NAMES: dict[str, str] = {
     "DE": "Germany", "FR": "France", "GB": "United Kingdom", "NO": "Norway",
@@ -124,25 +128,26 @@ class ENTSOClient:
         return start, end
 
     def get_generation(self, country: str) -> GenerationData:
-        area = AREA_CODES[country]
+        zones = zones_for(country)
         start, end = self._now_window()
-        df = self._client.query_generation(area, start=start, end=end)
+        combined_raw: dict[str, float] = {}
+        for z in zones:
+            try:
+                df = self._client.query_generation(z, start=start, end=end)
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [col[0] for col in df.columns]
+                latest = df.iloc[-1].dropna()
+                for col in latest.index:
+                    if isinstance(col, str) and latest[col] > 0:
+                        combined_raw[col] = combined_raw.get(col, 0.0) + float(latest[col]) / 1000.0
+            except Exception:
+                continue
 
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = [col[0] for col in df.columns]
-
-        latest = df.iloc[-1].dropna()
-        raw: dict[str, float] = {
-            col: float(latest[col]) / 1000.0
-            for col in latest.index
-            if isinstance(col, str) and latest[col] > 0
-        }
-
-        total_gw = sum(raw.values())
-        renewable_gw = sum(v for k, v in raw.items() if k in RENEWABLE_SOURCES)
+        total_gw = sum(combined_raw.values())
+        renewable_gw = sum(v for k, v in combined_raw.items() if k in RENEWABLE_SOURCES)
         renewable_pct = round((renewable_gw / total_gw * 100) if total_gw > 0 else 0.0, 1)
-        co2 = calculate_co2_intensity(raw)
-        sources = map_generation_sources(raw)
+        co2 = calculate_co2_intensity(combined_raw)
+        sources = map_generation_sources(combined_raw)
 
         return GenerationData(
             country=country,
@@ -153,44 +158,57 @@ class ENTSOClient:
         )
 
     def get_prices(self, country: str) -> PriceData:
-        area = AREA_CODES[country]
+        zones = zones_for(country)
         start, end = self._today_window()
-        series = self._client.query_day_ahead_prices(area, start=start, end=end)
+
+        prices_by_ts: dict[str, list[float]] = {}
+        for z in zones:
+            try:
+                series = self._client.query_day_ahead_prices(z, start=start, end=end)
+                for ts, val in series.items():
+                    if pd.notna(val):
+                        prices_by_ts.setdefault(ts.isoformat(), []).append(float(val))
+            except Exception:
+                continue
 
         prices = [
-            PricePoint(
-                timestamp=ts.isoformat(),
-                price_eur_mwh=round(float(val), 2),
-            )
-            for ts, val in series.items()
-            if pd.notna(val)
+            PricePoint(timestamp=ts, price_eur_mwh=round(sum(vals) / len(vals), 2))
+            for ts, vals in sorted(prices_by_ts.items())
         ]
-
         current = prices[-1].price_eur_mwh if prices else None
 
         yesterday_start = start - pd.Timedelta(days=1)
-        try:
-            y_series = self._client.query_day_ahead_prices(area, start=yesterday_start, end=start)
-            yesterday_avg = float(y_series.mean())
-            delta_pct = round(((current - yesterday_avg) / yesterday_avg) * 100, 1) if current and yesterday_avg else None
-        except Exception:
-            delta_pct = None
+        yest_vals: list[float] = []
+        for z in zones:
+            try:
+                y_series = self._client.query_day_ahead_prices(z, start=yesterday_start, end=start)
+                yest_vals.extend(float(v) for v in y_series if pd.notna(v))
+            except Exception:
+                continue
+        yesterday_avg = sum(yest_vals) / len(yest_vals) if yest_vals else None
+        delta_pct = (
+            round(((current - yesterday_avg) / yesterday_avg) * 100, 1)
+            if current is not None and yesterday_avg else None
+        )
 
         return PriceData(country=country, prices=prices, current_eur_mwh=current, delta_pct=delta_pct)
 
     def get_flows(self, country: str) -> FlowData:
-        area = AREA_CODES[country]
+        # Multi-zone flow aggregation is lossy — for the scope of this step we
+        # query only the primary zone (first in the list) and footnote this
+        # caveat in the methodology. Upgrading to proper per-zone aggregation
+        # is tracked in Plan B step 4.
+        area = zones_for(country)[0]
         start, end = self._now_window()
-        neighbours = [c for c in AREA_CODES if c != country]
+        other_countries = [c for c in AREA_CODES if c != country]
         flows: list[FlowItem] = []
         net_gw = 0.0
-
-        for neighbour in neighbours:
-            neighbour_area = AREA_CODES[neighbour]
+        for neighbour in other_countries:
+            n_area = zones_for(neighbour)[0]
             try:
-                exp_series = self._client.query_crossborder_flows(area, neighbour_area, start=start, end=end)
+                exp_series = self._client.query_crossborder_flows(area, n_area, start=start, end=end)
                 exp_gw = round(float(exp_series.iloc[-1]) / 1000.0, 2) if len(exp_series) else 0.0
-                imp_series = self._client.query_crossborder_flows(neighbour_area, area, start=start, end=end)
+                imp_series = self._client.query_crossborder_flows(n_area, area, start=start, end=end)
                 imp_gw = round(float(imp_series.iloc[-1]) / 1000.0, 2) if len(imp_series) else 0.0
                 net = exp_gw - imp_gw
                 if abs(net) > 0.05:
@@ -203,7 +221,6 @@ class ENTSOClient:
                     net_gw += net
             except Exception:
                 continue
-
         flows.sort(key=lambda f: f.flow_gw, reverse=True)
         return FlowData(country=country, flows=flows[:6], net_gw=round(net_gw, 2))
 

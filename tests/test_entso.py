@@ -41,3 +41,30 @@ def test_entso_client_get_generation_returns_generation_data():
     assert result.country == "DE"
     assert result.total_gw > 0
     assert len(result.sources) > 0
+
+
+from app.entso import AREA_CODES, zones_for
+
+
+def test_area_codes_are_lists():
+    for c, zones in AREA_CODES.items():
+        assert isinstance(zones, list), f"{c} not a list"
+        assert len(zones) >= 1
+
+
+def test_norway_has_five_zones():
+    assert zones_for("NO") == ["NO_1", "NO_2", "NO_3", "NO_4", "NO_5"]
+
+
+def test_sweden_has_four_zones():
+    assert zones_for("SE") == ["SE_1", "SE_2", "SE_3", "SE_4"]
+
+
+def test_italy_has_multiple_zones():
+    assert len(zones_for("IT")) >= 4
+
+
+def test_country_names_covers_all():
+    from app.entso import COUNTRY_NAMES
+    for c in AREA_CODES:
+        assert c in COUNTRY_NAMES
