@@ -1,4 +1,8 @@
-from app.models import GenerationData, PricePoint, FlowItem, CountryOverview, GridSummary
+from app.models import (
+    GenerationData, PricePoint, FlowItem, CountryOverview, GridSummary,
+    ForecastPoint, ForecastSeries, CSSBreakdown, RankingEntry,
+    SimulationResult, EvalResult, StructuredBriefing,
+)
 
 
 def test_generation_data_valid():
@@ -37,12 +41,6 @@ def test_country_overview_valid():
 def test_grid_summary_valid():
     s = GridSummary(country="DE", text="Germany is running 58% renewables today.")
     assert "58%" in s.text
-
-
-from app.models import (
-    ForecastPoint, ForecastSeries, CSSBreakdown, RankingEntry,
-    SimulationResult, EvalResult, StructuredBriefing,
-)
 
 
 def test_forecast_point_roundtrip():
@@ -99,3 +97,12 @@ def test_structured_briefing_fields():
         sources=["ENTSO-E day-ahead", "gpu_industry/strategy_value_chain_master"],
     )
     assert len(b.bullets) == 3
+
+
+def test_ranking_entry_valid():
+    r = RankingEntry(
+        country="FR", name="France", css=94.2,
+        carbon_score=98.0, cost_score=88.0, renewable_score=95.0, stability_score=90.0,
+    )
+    assert r.name == "France"
+    assert r.css == 94.2
