@@ -320,20 +320,34 @@ def get_forecast(country: str = Query(...)):
             return data
         except Exception as e:
             logger.warning("forecast fallback for %s: %s", country, e)
-    # Mock: flat forecast based on current prices/CO2
+    # Mock: realistic diurnal forecast. Typical EU pattern: evening demand
+    # peak 17-20 UTC raises dirty-peaker share; overnight 01-05 lowest;
+    # solar midday trough 10-14 (where applicable). Hash-seeded per country
+    # so two countries don't share identical curves.
+    import math as _math
+    import hashlib as _hashlib
     gen = _get_generation(country)
     prices = _get_prices(country)
     from datetime import datetime, timedelta, timezone
     start = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     from app.models import ForecastPoint
-    points = [
-        ForecastPoint(
+    base_co2 = gen.co2_intensity
+    base_price = prices.current_eur_mwh or 60.0
+    seed = int(_hashlib.md5(country.encode()).hexdigest()[:4], 16) / 65535  # 0..1
+    # Diurnal amplitude ±30% for CO₂, ±25% for price
+    points = []
+    for h in range(24):
+        # Demand factor: higher on AM 07-10 and PM 17-21 peaks, lowest 02-05
+        demand_f = 0.5 + 0.4 * (_math.sin((h - 6) / 24 * 2 * _math.pi) * 0.5 + 0.5) + 0.25 * (_math.sin((h - 14) / 24 * 2 * _math.pi) * 0.5 + 0.5)
+        # Solar daylight trough (helps carbon midday)
+        solar_f = max(0, _math.sin((h - 6) / 12 * _math.pi)) if 6 <= h <= 18 else 0
+        co2_mult = 0.75 + 0.35 * demand_f - 0.15 * solar_f + 0.05 * (seed - 0.5)
+        price_mult = 0.82 + 0.30 * demand_f - 0.10 * solar_f + 0.04 * (seed - 0.5)
+        points.append(ForecastPoint(
             timestamp=(start + timedelta(hours=h)).isoformat(),
-            co2_g_per_kwh=gen.co2_intensity,
-            price_eur_mwh=(prices.current_eur_mwh or 60.0) + (h % 6 - 3) * 3,  # gentle sin-like jitter
-        )
-        for h in range(24)
-    ]
+            co2_g_per_kwh=round(max(5.0, base_co2 * co2_mult), 2),
+            price_eur_mwh=round(max(5.0, base_price * price_mult), 2),
+        ))
     data = ForecastSeries(country=country, points=points, source="market")
     forecast_cache.set(f"forecast:{country}", data)
     return data
