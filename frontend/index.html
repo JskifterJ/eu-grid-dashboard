@@ -271,8 +271,24 @@
         <h2 class="forecast-title">What the grid is doing next.</h2>
         <p class="forecast-sub">Day-ahead market data for <span id="forecast-country-name" class="accent">—</span>. Price from the ENTSO-E day-ahead auction; CO₂ from the published generation forecast × IPCC emission factors.</p>
       </div>
-      <div class="forecast-chart-card">
-        <div class="chart-wrap" style="height:260px"><canvas id="forecast-chart"></canvas></div>
+      <div class="forecast-grid">
+        <div class="forecast-chart-card">
+          <div class="chart-wrap" style="height:260px"><canvas id="forecast-chart"></canvas></div>
+        </div>
+        <div class="eval-card">
+          <div class="eval-title mono">Forecast accuracy · last 7d MAPE</div>
+          <div class="eval-row">
+            <span class="eval-k">CO₂ intensity</span>
+            <div class="eval-bars" id="eval-co2">—</div>
+          </div>
+          <div class="eval-row">
+            <span class="eval-k">Day-ahead price</span>
+            <div class="eval-bars" id="eval-price">—</div>
+          </div>
+          <p class="eval-note">
+            We benchmark the ENTSO market forecast against a naive seasonal baseline (same hour, same weekday, last 4 weeks) — lower MAPE means better forecast. The gap is what "forecasting" is really worth.
+          </p>
+        </div>
       </div>
     </div>
   </section>

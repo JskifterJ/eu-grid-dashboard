@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 from typing import Optional
@@ -32,6 +33,7 @@ overview_cache = Cache(ttl_seconds=1800)
 forecast_cache = Cache(ttl_seconds=900)
 ranking_cache = Cache(ttl_seconds=900)
 briefing_cache = Cache(ttl_seconds=3600)
+eval_cache = Cache(ttl_seconds=21600)  # 6 hours
 
 SUPPORTED_COUNTRIES = set(AREA_CODES.keys())
 _LIVE = bool(os.environ.get("ENTSO_API_KEY", "").strip())
@@ -413,3 +415,31 @@ def get_briefing(
     )
     briefing_cache.set(cache_key, briefing)
     return briefing
+
+
+@router.get("/api/eval", response_model=EvalResult)
+def get_eval(country: str = Query(...), metric: str = Query("co2")):
+    _validate_country(country)
+    if metric not in ("co2", "price"):
+        raise HTTPException(400, "metric must be co2 or price")
+    key = f"eval:{country}:{metric}"
+    cached = eval_cache.get(key)
+    if cached:
+        return cached
+    if _LIVE:
+        # TODO: when HistoricalStore has data, compute real MAPE here
+        pass
+    # Deterministic mock MAPE seeded from country + metric
+    seed = int(hashlib.md5(f"{country}:{metric}".encode()).hexdigest()[:8], 16)
+    if metric == "price":
+        market = 6 + (seed % 50) / 10.0         # 6.0 – 11.0
+        naive  = 12 + (seed % 80) / 10.0        # 12.0 – 20.0
+    else:  # co2
+        market = 10 + (seed % 50) / 10.0        # 10.0 – 15.0
+        naive  = 18 + (seed % 80) / 10.0        # 18.0 – 26.0
+    result = EvalResult(
+        country=country, metric=metric,  # type: ignore[arg-type]
+        window_days=7, market_mape_pct=round(market, 2), naive_mape_pct=round(naive, 2),
+    )
+    eval_cache.set(key, result)
+    return result

@@ -102,9 +102,42 @@ async function renderForecastChart(country) {
 
 window.renderForecastChart = renderForecastChart;
 
+async function renderForecastEval(country) {
+  try {
+    const [co2Data, priceData] = await Promise.all([
+      fetchJson(`/api/eval?country=${country}&metric=co2`),
+      fetchJson(`/api/eval?country=${country}&metric=price`),
+    ]);
+    _renderEvalRow("eval-co2", co2Data, 30);      // 30 = chart upper bound for CO₂ MAPE
+    _renderEvalRow("eval-price", priceData, 30);
+  } catch (e) {
+    console.error("eval render failed:", e);
+  }
+}
+
+function _renderEvalRow(hostId, data, maxPct) {
+  const host = document.getElementById(hostId);
+  if (!host) return;
+  const rows = [
+    { label: "market", pct: data.market_mape_pct, cls: "market" },
+    { label: "naive",  pct: data.naive_mape_pct,  cls: "naive"  },
+  ];
+  host.innerHTML = rows.map(r => `
+    <div class="eval-bar-row ${r.cls}">
+      <span class="bar-label">${r.label}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${Math.min(100, r.pct / maxPct * 100)}%"></span></span>
+      <span class="bar-val">${r.pct.toFixed(1)}%</span>
+    </div>
+  `).join("");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const sel = document.getElementById("country-select");
   const initial = (sel && sel.value) || "DK";
   renderForecastChart(initial);
-  if (sel) sel.addEventListener("change", () => renderForecastChart(sel.value));
+  renderForecastEval(initial);
+  if (sel) sel.addEventListener("change", () => {
+    renderForecastChart(sel.value);
+    renderForecastEval(sel.value);
+  });
 });

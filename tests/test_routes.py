@@ -180,3 +180,26 @@ def test_ranking_workload_overrides_weights_param(client):
         r = client.get("/api/ranking?workload=training&weights=cost").json()
     # Workload preset wins — assert response weights match training's preset (40/30/20/10)
     assert r["weights"] == {"carbon": 40, "cost": 30, "renewable": 20, "stability": 10}
+
+
+def test_eval_endpoint_returns_both_mape_values(client):
+    with patch("app.routes._LIVE", False):
+        r = client.get("/api/eval?country=FR&metric=co2").json()
+    assert r["country"] == "FR"
+    assert r["metric"] == "co2"
+    assert "market_mape_pct" in r and "naive_mape_pct" in r
+    assert 0 < r["market_mape_pct"] < 50
+    assert 0 < r["naive_mape_pct"] < 50
+
+
+def test_eval_endpoint_price_metric(client):
+    with patch("app.routes._LIVE", False):
+        r = client.get("/api/eval?country=DE&metric=price").json()
+    assert r["metric"] == "price"
+    # market forecast should typically beat naive baseline
+    assert r["market_mape_pct"] <= r["naive_mape_pct"]
+
+
+def test_eval_endpoint_unknown_metric_returns_400(client):
+    r = client.get("/api/eval?country=FR&metric=temperature")
+    assert r.status_code == 400
