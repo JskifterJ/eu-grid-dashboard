@@ -47,8 +47,9 @@ RENEWABLE_DISPLAY = {"Wind", "Solar", "Hydro", "Hydro Reservoir", "Pumped Storag
 MOCK_EMISSION: dict[str, float] = {
     "Wind": 11.0, "Solar": 41.0, "Nuclear": 12.0, "Hydro": 24.0,
     "Hydro Reservoir": 24.0, "Pumped Storage": 24.0, "Gas": 490.0,
-    "Coal": 820.0, "Lignite": 1054.0, "Oil": 650.0, "Biomass": 230.0,
-    "Other Renewable": 50.0, "Other": 300.0, "Geothermal": 38.0, "Waste": 330.0,
+    "Coal": 820.0, "Lignite": 1054.0, "Oil": 650.0, "Oil Shale": 1100.0,
+    "Biomass": 230.0, "Other Renewable": 50.0, "Other": 300.0,
+    "Geothermal": 38.0, "Waste": 330.0,
 }
 
 MOCK_PRICES: dict[str, float] = {
