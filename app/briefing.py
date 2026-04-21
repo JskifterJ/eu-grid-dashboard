@@ -136,7 +136,7 @@ def _fallback_briefing(
         bullets=bullets,
         risk_flag=risk,  # type: ignore[arg-type]
         as_of=datetime.now(timezone.utc).isoformat(),
-        sources=["ENTSO-E day-ahead", "app/scoring.py", "mock fallback"],
+        sources=["ENTSO-E day-ahead", "IPCC AR5 emission factors", "Compute Siting Score"],
     )
 
 
