@@ -1,49 +1,63 @@
 :root {
-  --bg: #090c10;
-  --bg-card: #0d1117;
-  --bg-card2: #161b22;
-  --border: #21262d;
-  --text: #e6edf3;
-  --muted: #8b949e;
-  --dim: #6e7681;
-  --green: #7ee787;
-  --blue: #58a6ff;
-  --blue-light: #a5d6ff;
-  --orange: #f78166;
-  --yellow: #d29922;
-  --purple: #d2a8ff;
-  --mono: 'SF Mono', 'Fira Code', monospace;
-  --sans: system-ui, -apple-system, sans-serif;
-  --radius: 8px;
-  --map-ocean: #0d1829;
-  --map-country: #2a3550;
-  --map-country-hover: #e6edf3;
-  --map-selected: #7ee787;
+  /* Editorial palette — dark "paper" mode */
+  --bg: #1a1815;
+  --bg-card: #21201c;
+  --bg-card2: #2a2824;
+  --border: #3a362f;
+  --text: #f3eee3;
+  --muted: #b8b1a0;
+  --dim: #857e6d;
+  --green: #9cc98a;
+  --blue: #8db6d1;
+  --blue-light: #bcd8e8;
+  --orange: #e69b7b;
+  --yellow: #d1b06b;
+  --purple: #c4a5d1;
+  --accent: #c69a56;           /* muted amber — editorial accent */
+  --serif: "Charter", "Iowan Old Style", Georgia, serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --radius: 4px;
+  --map-ocean: #15130f;
+  --map-country: #3a3730;
+  --map-country-hover: #f3eee3;
+  --map-selected: #c69a56;
 }
 
 [data-theme="light"] {
-  --bg: #f6f8fa;
+  --bg: #faf8f3;
   --bg-card: #ffffff;
-  --bg-card2: #f0f3f6;
-  --border: #d0d7de;
-  --text: #24292f;
-  --muted: #57606a;
-  --dim: #6e7781;
-  --green: #1a7f37;
-  --blue: #0969da;
-  --blue-light: #0550ae;
-  --orange: #cf222e;
-  --yellow: #9a6700;
-  --purple: #8250df;
-  --map-ocean: #c8dff0;
-  --map-country: #dde5ed;
-  --map-country-hover: #24292f;
-  --map-selected: #1a7f37;
+  --bg-card2: #f2ece0;
+  --border: #e8e0d0;
+  --text: #1a1a1a;
+  --muted: #4a4236;
+  --dim: #8b8373;
+  --green: #5a8a3a;
+  --blue: #2f6a9e;
+  --blue-light: #1e5080;
+  --orange: #c85a3a;
+  --yellow: #9a6a2f;
+  --purple: #7a4a9a;
+  --accent: #9a6a2f;
+  --map-ocean: #e8dfcc;
+  --map-country: #e5dcc7;
+  --map-country-hover: #1a1a1a;
+  --map-selected: #9a6a2f;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; transition: background 0.2s, color 0.2s; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
+}
 .mono { font-family: var(--mono); }
+.serif { font-family: var(--serif); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015em; }
 .green { color: var(--green); }
 .blue { color: var(--blue); }
 .blue-light { color: var(--blue-light); }
