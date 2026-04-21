@@ -652,3 +652,64 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015
   font-size: 10px; color: var(--dim); font-style: italic;
   border-top: 1px solid var(--border); padding-top: 10px; line-height: 1.5;
 }
+
+.tod-ribbon-wrap {
+  margin-top: 22px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+}
+.tod-ribbon-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.tod-ribbon-eyebrow {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--accent);
+}
+.tod-ribbon-savings {
+  font-family: var(--serif); font-size: 15px; color: var(--text);
+}
+.tod-ribbon-savings strong { color: var(--green); font-weight: 600; }
+.tod-ribbon-savings em { color: var(--muted); font-style: normal; font-size: 12px; }
+
+.tod-ribbon {
+  display: grid; grid-template-columns: repeat(24, 1fr);
+  gap: 2px;
+  height: 56px;
+  margin-bottom: 10px;
+  position: relative;
+}
+.tod-hour {
+  position: relative;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+.tod-hour:hover { filter: brightness(1.15); transform: scaleY(1.05); }
+.tod-hour.best { outline: 2px solid var(--green); outline-offset: 0; z-index: 2; }
+.tod-hour.worst { outline: 1px dashed var(--orange); outline-offset: 0; }
+.tod-hour-label {
+  position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 8px; color: var(--dim); font-family: var(--mono);
+}
+
+.tod-ribbon-legend {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  font-size: 10px; color: var(--muted); font-family: var(--mono);
+  padding-top: 22px; border-top: 1px dashed var(--border);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.tod-key {
+  display: inline-block; width: 11px; height: 11px; border-radius: 2px;
+  vertical-align: middle; margin-right: 4px;
+}
+.tod-key-best { outline: 2px solid var(--green); background: var(--bg-card2); }
+.tod-key-worst { outline: 1px dashed var(--orange); background: var(--bg-card2); }
+.tod-scale { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+.tod-grad {
+  display: inline-block; width: 80px; height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, #3fb950, #d29922, #f85149);
+  margin: 0 4px;
+}
+
+/* Tooltip-reuse: tod-hour hover populates the shared #tooltip via JS */

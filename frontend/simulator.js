@@ -109,6 +109,86 @@ function _renderOutput(result) {
   `;
 }
 
+function _co2ColorForRibbon(val) {
+  // Scale 0..600 g/kWh → green..amber..red
+  const pct = Math.min(1, Math.max(0, val / 600));
+  if (pct < 0.25) {
+    const t = pct / 0.25;
+    return `rgba(${63 + (210 - 63) * t}, ${185 + (153 - 185) * t}, ${80 + (34 - 80) * t}, 0.95)`;
+  } else if (pct < 0.6) {
+    const t = (pct - 0.25) / 0.35;
+    return `rgba(${210}, ${153 + (82 - 153) * t}, ${34}, 0.95)`;
+  } else {
+    const t = Math.min(1, (pct - 0.6) / 0.4);
+    return `rgba(${210 + (248 - 210) * t}, ${82 + (81 - 82) * t}, ${34 + (73 - 34) * t}, 0.95)`;
+  }
+}
+
+async function renderTimeOfDay() {
+  const ribbon = document.getElementById("tod-ribbon");
+  const savings = document.getElementById("tod-savings");
+  if (!ribbon || !savings) return;
+  try {
+    const params = new URLSearchParams({
+      country: SimState.country, mw: SimState.mw, hours: SimState.hours,
+    });
+    const data = await fetchJson(`/api/time-of-day?${params}`);
+
+    // Mark hours within the best/worst windows
+    const bestStartIdx = data.hours.findIndex(h => h.timestamp === data.best_window.start);
+    const worstStartIdx = data.hours.findIndex(h => h.timestamp === data.worst_window.start);
+    const w = Math.max(1, Math.ceil(SimState.hours));
+
+    ribbon.innerHTML = data.hours.map((h, i) => {
+      const isBest = i >= bestStartIdx && i < bestStartIdx + w;
+      const isWorst = i >= worstStartIdx && i < worstStartIdx + w;
+      const ts = new Date(h.timestamp);
+      const hh = ts.getUTCHours().toString().padStart(2, "0");
+      const showLabel = i % 4 === 0;  // label every 4 hours
+      return `
+        <div class="tod-hour ${isBest ? 'best' : ''} ${isWorst ? 'worst' : ''}"
+             style="background:${_co2ColorForRibbon(h.co2_g_per_kwh)}"
+             data-ts="${h.timestamp}" data-co2="${h.co2_g_per_kwh.toFixed(0)}" data-price="${h.price_eur_mwh.toFixed(1)}">
+          ${showLabel ? `<div class="tod-hour-label">${hh}:00</div>` : ''}
+        </div>
+      `;
+    }).join("");
+
+    // Tooltip wiring using existing window.showTooltip infrastructure from map.js
+    ribbon.querySelectorAll(".tod-hour").forEach(el => {
+      el.addEventListener("mouseenter", (event) => {
+        const ts = new Date(el.dataset.ts);
+        const hh = ts.getUTCHours().toString().padStart(2, "0");
+        const html = `
+          <div class="tt-title">${hh}:00 UTC</div>
+          <div class="tt-row"><span>CO₂</span><b>${el.dataset.co2} g/kWh</b></div>
+          <div class="tt-row"><span>Price</span><b>€${el.dataset.price}/MWh</b></div>
+        `;
+        window.showTooltip && window.showTooltip(html, event);
+      });
+      el.addEventListener("mousemove", (event) => window.moveTooltip && window.moveTooltip(event));
+      el.addEventListener("mouseleave", () => window.hideTooltip && window.hideTooltip());
+    });
+
+    const bestStart = new Date(data.best_window.start);
+    const bestHH = bestStart.getUTCHours().toString().padStart(2, "0");
+    const worstStart = new Date(data.worst_window.start);
+    const worstHH = worstStart.getUTCHours().toString().padStart(2, "0");
+
+    if (data.co2_savings_pct > 1) {
+      savings.innerHTML = `
+        Start at <strong>${bestHH}:00 UTC</strong> instead of ${worstHH}:00 UTC and save
+        <strong>${data.co2_savings_pct.toFixed(0)}% CO₂</strong> ·
+        <em>${data.co2_savings_kg.toFixed(0)} kg avoided</em>
+      `;
+    } else {
+      savings.innerHTML = `<em>The grid is flat for this window — timing doesn't matter today.</em>`;
+    }
+  } catch (e) {
+    console.error("time-of-day render failed:", e);
+  }
+}
+
 async function runSimulation() {
   const el = document.getElementById("sim-output");
   if (el) el.innerHTML = '<div class="sim-loading">Computing…</div>';
@@ -124,6 +204,7 @@ async function runSimulation() {
     const data = await fetchJson(`/api/simulate?${params}`);
     _renderOutput(data);
     _syncUrl();
+    renderTimeOfDay();  // NEW: refresh ribbon
   } catch (e) {
     if (el) el.innerHTML = `<div class="sim-loading" style="color:var(--orange)">Failed: ${e.message || e}</div>`;
     console.error(e);
