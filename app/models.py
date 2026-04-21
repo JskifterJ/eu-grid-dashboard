@@ -119,3 +119,17 @@ class StructuredBriefing(BaseModel):
     risk_flag: Literal["low", "med", "high"]
     as_of: str
     sources: list[str]
+
+
+class LCABreakdown(BaseModel):
+    workload_mw: float
+    workload_hours: float
+    hardware: str
+    pue: float
+    life_years: int
+    operational_co2_kg: float        # grid CO₂ × MW × h (PUE-adjusted)
+    cooling_overhead_kg: float       # portion of operational due to PUE > 1 (subset of operational)
+    embodied_hardware_kg: float      # GPU manufacturing, amortized
+    embodied_datacenter_kg: float    # building+cooling+power infra, amortized
+    total_kg: float                  # operational + embodied_hardware + embodied_datacenter
+    operational_share_pct: float     # operational / total × 100
