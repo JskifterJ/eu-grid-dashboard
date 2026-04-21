@@ -184,12 +184,33 @@
             <p><strong>Eval benchmark</strong>: naive seasonal baseline (same-hour-same-weekday mean over last 4 weeks) is computed alongside to measure whether the market forecast actually beats a trivial baseline — surfaced as MAPE on the (upcoming) forecast-accuracy panel.</p>
           </div>
 
+          <h4 class="method-section-title">Time-of-day optimization</h4>
+          <div class="method-formula">
+            <p>The simulator's 24h ribbon shows forecasted CO₂ intensity hour-by-hour. For a workload of <code>N</code> contiguous hours, we sweep every start-time window and pick:</p>
+            <code>best_window = argmin_{i ∈ [0, 24-N]}  mean(co2[i..i+N])</code>
+            <code>worst_window = argmax_{i ∈ [0, 24-N]} mean(co2[i..i+N])</code>
+            <p>Savings: <strong>(worst_window_avg − best_window_avg) / worst_window_avg × 100</strong>. The kg-CO₂-avoided number is <code>mw × hours × (worst_avg − best_avg)</code> — what you'd save by deferring a 10 MW × 6h job from evening peak to overnight trough.</p>
+            <p class="method-note">This is why agents building up overnight batches is an interesting product pattern — you're not just saving cost, you're physically avoiding carbon emissions that would have been produced by a peaker plant. The deferred-workload card below the simulator models what a "night rate" inference tier could look like.</p>
+          </div>
+
+          <h4 class="method-section-title">Life-cycle assessment (LCA)</h4>
+          <div class="method-formula">
+            <p>The simulator's <strong>Full LCA toggle</strong> replaces the operational-only view with a proper lifecycle breakdown:</p>
+            <code>total_kg = operational + embodied_hardware + embodied_datacenter</code>
+            <p><strong>Operational</strong> = <code>MW × hours × (g CO₂/kWh) × PUE</code>. PUE (Power Usage Effectiveness) is the ratio of total facility energy to IT energy — defaults: Nordic 1.10, Northern EU 1.20, Central EU 1.25, Southern EU 1.40, Island 1.45. Free cooling in Norway/Sweden/Iceland is why Nordic co-location is so efficient.</p>
+            <p><strong>Embodied hardware</strong> amortizes GPU manufacturing CO₂ over a 3-year service life (the neocloud / hyperscale depreciation standard). Per-unit medians: A100 900 kg, H100 1,300 kg, H200 1,400 kg, B200 1,900 kg, MI300X 1,500 kg, Groq LPU 600 kg — from NVIDIA ESG filings, <a href="https://arxiv.org/abs/2104.10350" target="_blank" rel="noreferrer">Patterson et al. 2021</a>, and industry LCA studies. GPUs-per-MW varies by chip TDP (H100 ≈ 1,430/MW; B200 ≈ 1,000/MW).</p>
+            <p><strong>Embodied datacenter</strong> covers building structure + HVAC + power distribution, amortized at <strong>7 kg CO₂/kW/year</strong> — the LBNL/industry-median from the 5–10 kg range. This is small relative to operational and hardware, but non-zero for hyperscale footprints.</p>
+            <p class="method-note">With clean operational power (France ~40 g/kWh), embodied carbon becomes the *dominant* share — operational drops to ~50% of total. That flips the conventional "choose Nordic for clean power" wisdom: once the grid is clean enough, hardware manufacturing is where the carbon lives. Extending GPU service life from 3 to 5 years would halve embodied hardware CO₂ per workload.</p>
+          </div>
+
           <h4 class="method-section-title">Known caveats</h4>
           <ul class="method-caveats">
             <li>Multi-zone countries (DE_LU, NO_1..NO_5, SE_1..SE_4, IT_NORD..IT_SARD, DK_1/DK_2) are aggregated to country level by summing generation GW and generation-weight-averaging prices. Flows are queried on the primary zone only.</li>
             <li>Bidding-zone coverage differs across countries — some Balkan/Baltic data may be sparse in live ENTSO-E; mock data fills gaps when the API key is absent.</li>
             <li>IPCC AR5 (2014) emission factors are lifecycle medians; newer IPCC AR6 values exist but AR5 remains the canonical reference for cross-country comparison.</li>
             <li>The PEF (primary energy factor) toggle on the generation mix is separate from CSS — CSS scores on electricity-delivered basis because that's what compute buys.</li>
+            <li>LCA embodied-carbon figures carry ±30% uncertainty. Official NVIDIA Scope-3 product-level data for the newer H100 / B200 generations is still sparse; we use published ESG figures + Patterson-style extrapolations. Estimates should be treated as order-of-magnitude.</li>
+            <li>Time-of-day optimization assumes the workload is contiguously interruptible. Real training jobs may need a specific wall-clock window (e.g. a 72h run over a weekend); the 24h window selection generalizes to longer horizons but requires a longer forecast we don't currently publish.</li>
           </ul>
         </div>
       </details>
