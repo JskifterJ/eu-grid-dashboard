@@ -228,7 +228,7 @@ async function runSimulation() {
       carbon_price: SimState.carbon_price,
     });
     if (SimState.workload === "inference") params.set("region", SimState.region);
-    if (SimState.lca) params.set("lca", "true");
+    if (SimState.lca) { params.set("lca", "true"); params.set("hardware", SimState.hardware); }
     const data = await fetchJson(`/api/simulate?${params}`);
     _renderOutput(data);
     _syncUrl();
