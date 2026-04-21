@@ -68,7 +68,7 @@ function co2Stroke(v) {
     : d3.scaleLinear().domain([0,150,400,700]).range(['#3fb950','#d29922','#f85149','#f85149']).clamp(true)(v);
 }
 
-let _projection, _svgG, _overviewByCode = {};
+let _projection, _svgG, _overviewByCode = {}, _zoomBehavior = null;
 
 window.initMap = async function(onCountrySelect) {
   const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(r => r.json());
@@ -95,6 +95,15 @@ window.initMap = async function(onCountrySelect) {
   `);
 
   _svgG = svg.append('g');
+
+  // Pan + zoom
+  const zoom = d3.zoom()
+    .scaleExtent([1, 8])
+    .translateExtent([[-W * 0.3, -H * 0.3], [W * 1.3, H * 1.3]])
+    .on('zoom', (event) => { _svgG.attr('transform', event.transform); });
+  svg.call(zoom).on('dblclick.zoom', null);  // double-click doesn't zoom; we'll use it for reset
+  _zoomBehavior = zoom;  // store for reset button
+
   _svgG.append('rect').attr('class', 'map-ocean').attr('width', W).attr('height', H).attr('rx', 6);
 
   _svgG.selectAll('.country')
@@ -290,3 +299,9 @@ function _wireDatacenterToggles() {
     });
   });
 }
+
+window.resetMapView = function() {
+  if (_zoomBehavior) {
+    d3.select('#map-svg').transition().duration(400).call(_zoomBehavior.transform, d3.zoomIdentity);
+  }
+};
