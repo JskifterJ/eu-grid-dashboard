@@ -133,6 +133,36 @@ window.initMap = async function(onCountrySelect) {
     });
   } catch(e) { console.warn('Overview fetch failed:', e); }
 
+  // Background flow web — all bilateral imports/exports as thin lines.
+  try {
+    const allFlows = await window.fetchAllFlows(Object.keys(window.MAP_NAMES));
+    const seenEdges = new Set();
+    allFlows.forEach(({country, flows}) => {
+      if (!flows) return;
+      const fromPos = CENTROIDS[country];
+      if (!fromPos) return;
+      const [x1, y1] = _projection(fromPos);
+      flows.forEach(flow => {
+        const partnerCode = Object.entries(window.MAP_NAMES).find(([k, v]) => v === flow.partner)?.[0];
+        if (!partnerCode || !CENTROIDS[partnerCode]) return;
+        // dedupe undirected edges so we draw each line only once
+        const edgeKey = [country, partnerCode].sort().join('—');
+        if (seenEdges.has(edgeKey)) return;
+        seenEdges.add(edgeKey);
+        const [x2, y2] = _projection(CENTROIDS[partnerCode]);
+        const mx = (x1 + x2) / 2 + (y2 - y1) * 0.18;
+        const my = (y1 + y2) / 2 - (x2 - x1) * 0.18;
+        _svgG.insert('path', '.country')
+          .attr('class', 'flow-web')
+          .attr('d', `M${x1},${y1} Q${mx},${my} ${x2},${y2}`)
+          .attr('fill', 'none')
+          .attr('stroke', 'var(--accent)')
+          .attr('stroke-width', Math.min(2.2, 0.5 + flow.flow_gw * 0.3))
+          .attr('opacity', 0.18);
+      });
+    });
+  } catch (e) { console.warn('flow web fetch failed:', e); }
+
   // Default: Denmark
   _selectCountry('DK', euroFeatures, onCountrySelect);
 

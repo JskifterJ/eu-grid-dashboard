@@ -59,3 +59,11 @@ window.fetchSimulate = async function({ country, mw, hours, workload, region, hu
   if (weights) params.set("weights", weights);
   return fetchJson(`/api/simulate?${params}`);
 };
+
+async function fetchAllFlows(countryCodes) {
+  const results = await Promise.allSettled(
+    countryCodes.map(c => fetchJson(`/api/flows?country=${c}`).then(d => ({country: c, ...d})))
+  );
+  return results.filter(r => r.status === 'fulfilled').map(r => r.value);
+}
+window.fetchAllFlows = fetchAllFlows;
