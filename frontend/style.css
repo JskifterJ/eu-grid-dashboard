@@ -448,3 +448,14 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015
   height: 100%; background: var(--accent); border-radius: 2px;
   transition: width 0.25s;
 }
+
+.forecast-section { padding: 32px 0; background: var(--bg); }
+.forecast-header { margin-bottom: 18px; max-width: 720px; }
+.forecast-eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: var(--accent); margin-bottom: 6px; }
+.forecast-title { font-size: clamp(22px, 3vw, 30px); line-height: 1.2; color: var(--text); margin-bottom: 8px; }
+.forecast-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.forecast-sub .accent { color: var(--text); font-weight: 600; }
+.forecast-chart-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+}

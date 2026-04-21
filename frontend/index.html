@@ -14,6 +14,7 @@
   <script src="hero.js" defer></script>
   <script src="ranking.js" defer></script>
   <script src="simulator.js" defer></script>
+  <script src="forecast.js" defer></script>
 </head>
 <body>
 
@@ -227,6 +228,19 @@
         <div class="sim-output" id="sim-output">
           <div class="sim-loading">Computing…</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="forecast-section">
+    <div class="container">
+      <div class="forecast-header">
+        <div class="forecast-eyebrow mono">24-hour forecast</div>
+        <h2 class="forecast-title">What the grid is doing next.</h2>
+        <p class="forecast-sub">Day-ahead market data for <span id="forecast-country-name" class="accent">—</span>. Price from the ENTSO-E day-ahead auction; CO₂ from the published generation forecast × IPCC emission factors.</p>
+      </div>
+      <div class="forecast-chart-card">
+        <div class="chart-wrap" style="height:260px"><canvas id="forecast-chart"></canvas></div>
       </div>
     </div>
   </section>
