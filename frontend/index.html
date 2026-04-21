@@ -13,6 +13,7 @@
   <script src="charts.js" defer></script>
   <script src="hero.js" defer></script>
   <script src="ranking.js" defer></script>
+  <script src="simulator.js" defer></script>
 </head>
 <body>
 
@@ -170,6 +171,63 @@
           </ul>
         </div>
       </details>
+    </div>
+  </section>
+
+  <section class="simulator" id="simulator">
+    <div class="container">
+      <div class="sim-header">
+        <div>
+          <div class="sim-eyebrow mono">Compute-siting simulator</div>
+          <h2 class="sim-title">Run the numbers for your workload.</h2>
+        </div>
+      </div>
+
+      <div class="sim-grid">
+        <div class="sim-inputs">
+          <div class="sim-field">
+            <label class="sim-label">Workload</label>
+            <div class="sim-pills" id="sim-workload">
+              <button type="button" class="sim-pill active" data-value="training">Training</button>
+              <button type="button" class="sim-pill" data-value="fine-tuning">Fine-tuning</button>
+              <button type="button" class="sim-pill" data-value="inference">Inference</button>
+            </div>
+          </div>
+          <div class="sim-field" id="sim-region-field" style="display:none">
+            <label class="sim-label" for="sim-region">Serving region</label>
+            <select id="sim-region" class="sim-select">
+              <option value="central">Central EU</option>
+              <option value="western" selected>Western EU</option>
+              <option value="northern">Northern EU</option>
+              <option value="southern">Southern EU</option>
+              <option value="iberian">Iberian</option>
+            </select>
+          </div>
+          <div class="sim-field">
+            <label class="sim-label" for="sim-country">Country</label>
+            <select id="sim-country" class="sim-select"></select>
+          </div>
+          <div class="sim-field-row">
+            <div class="sim-field">
+              <label class="sim-label" for="sim-mw">Power draw</label>
+              <div class="sim-input-wrap"><input id="sim-mw" type="number" class="sim-input" value="10" min="0.1" step="0.5"><span class="sim-unit">MW</span></div>
+            </div>
+            <div class="sim-field">
+              <label class="sim-label" for="sim-hours">Duration</label>
+              <div class="sim-input-wrap"><input id="sim-hours" type="number" class="sim-input" value="6" min="0.1" step="0.5"><span class="sim-unit">h</span></div>
+            </div>
+          </div>
+          <div class="sim-field">
+            <label class="sim-label" for="sim-carbon">Carbon price (€/tCO₂)</label>
+            <div class="sim-input-wrap"><input id="sim-carbon" type="number" class="sim-input" value="75" min="0" step="5"><span class="sim-unit">€/t</span></div>
+          </div>
+          <button type="button" id="sim-share-btn" class="sim-share">Copy shareable link</button>
+        </div>
+
+        <div class="sim-output" id="sim-output">
+          <div class="sim-loading">Computing…</div>
+        </div>
+      </div>
     </div>
   </section>
 

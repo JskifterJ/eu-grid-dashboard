@@ -367,3 +367,84 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015
 .method-caveats li {
   font-size: 12px; color: var(--muted); margin-bottom: 5px; line-height: 1.5;
 }
+
+.simulator { padding: 32px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg-card); }
+.sim-header { margin-bottom: 22px; max-width: 700px; }
+.sim-eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: var(--accent); margin-bottom: 8px; }
+.sim-title { font-size: clamp(22px, 3vw, 30px); line-height: 1.2; color: var(--text); }
+.sim-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+@media (max-width: 760px) { .sim-grid { grid-template-columns: 1fr; } }
+
+.sim-inputs { display: flex; flex-direction: column; gap: 14px; }
+.sim-field { display: flex; flex-direction: column; gap: 6px; }
+.sim-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sim-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--dim); font-family: var(--mono); }
+.sim-pills { display: inline-flex; border: 1px solid var(--border); border-radius: 99px; overflow: hidden; }
+.sim-pill { background: transparent; color: var(--muted); border: none; padding: 7px 14px; font-size: 11px; font-family: var(--mono); cursor: pointer; transition: background 0.15s, color 0.15s; flex: 1; }
+.sim-pill:hover { color: var(--text); }
+.sim-pill.active { background: var(--accent); color: var(--bg); }
+
+.sim-select, .sim-input {
+  background: var(--bg-card2); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 12px; border-radius: var(--radius);
+  font-size: 13px; font-family: var(--sans);
+  transition: border-color 0.15s;
+}
+.sim-select:focus, .sim-input:focus { outline: none; border-color: var(--accent); }
+.sim-input-wrap { display: flex; align-items: stretch; }
+.sim-input-wrap .sim-input { flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
+.sim-unit {
+  background: var(--bg-card2); border: 1px solid var(--border); border-left: none;
+  padding: 8px 10px; font-size: 11px; color: var(--muted);
+  font-family: var(--mono); border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius);
+  display: flex; align-items: center;
+}
+.sim-share {
+  margin-top: 6px; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); padding: 8px 14px; border-radius: 99px;
+  font-size: 11px; font-family: var(--mono); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.sim-share:hover { color: var(--accent); border-color: var(--accent); }
+.sim-share.copied { color: var(--green); border-color: var(--green); }
+
+.sim-output {
+  background: var(--bg-card2); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: var(--radius);
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.sim-loading { color: var(--muted); font-style: italic; }
+.sim-output-row {
+  display: grid; grid-template-columns: 130px 1fr;
+  align-items: baseline; gap: 14px;
+}
+.sim-output-row .sim-k {
+  font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: 1px; color: var(--dim);
+}
+.sim-output-row .sim-v {
+  font-family: var(--serif); font-size: 22px; color: var(--text); line-height: 1.2;
+}
+.sim-output-row .sim-v .sim-unit-sm { font-size: 13px; color: var(--muted); font-family: var(--sans); margin-left: 4px; }
+.sim-output-row .sim-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+.sim-verdict {
+  padding: 12px 14px; border-radius: var(--radius); background: var(--bg-card);
+  border: 1px solid var(--border); font-size: 13px; color: var(--text); line-height: 1.6;
+}
+.sim-verdict strong { color: var(--accent); font-weight: 600; }
+.sim-verdict .sim-tag { display: inline-block; background: var(--accent); color: var(--bg); padding: 1px 8px; border-radius: 99px; font-size: 10px; font-family: var(--mono); letter-spacing: 1px; text-transform: uppercase; margin-right: 6px; vertical-align: middle; }
+
+.sim-percentile {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-family: var(--mono); color: var(--dim);
+}
+.sim-percentile .sim-percentile-bar {
+  width: 100px; height: 4px; background: var(--bg-card);
+  border-radius: 2px; overflow: hidden;
+}
+.sim-percentile .sim-percentile-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  transition: width 0.25s;
+}
