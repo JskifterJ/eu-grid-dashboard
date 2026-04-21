@@ -74,17 +74,20 @@
   <section class="ranking-strip">
     <div class="container">
       <div class="ranking-header">
-        <span class="ranking-title mono">Compute Siting Score · all 20 countries</span>
+        <span class="ranking-title mono" id="ranking-title">Compute Siting Score · loading…</span>
         <div class="ranking-controls">
           <div class="preset-switcher" role="radiogroup" aria-label="weights preset">
             <button class="preset-btn" data-preset="green">Green</button>
             <button class="preset-btn active" data-preset="balanced">Balanced</button>
             <button class="preset-btn" data-preset="cost">Cost</button>
           </div>
-          <div class="workload-switcher" role="radiogroup" aria-label="workload mode">
-            <button class="workload-btn active" data-workload="training">Training</button>
-            <button class="workload-btn" data-workload="fine-tuning">Fine-tuning</button>
-            <button class="workload-btn" data-workload="inference">Inference</button>
+          <div class="workload-switcher-wrap">
+            <div class="workload-switcher" role="radiogroup" aria-label="workload mode">
+              <button class="workload-btn active" data-workload="training">Training</button>
+              <button class="workload-btn" data-workload="fine-tuning">Fine-tuning</button>
+              <button class="workload-btn" data-workload="inference">Inference</button>
+            </div>
+            <button type="button" class="info-btn" id="workload-info-btn" aria-label="About workload modes">i</button>
           </div>
           <select id="region-select" class="region-select" style="display:none">
             <option value="central">🛰 Central EU</option>
@@ -95,7 +98,9 @@
           </select>
         </div>
       </div>
+      <div id="ranking-caption" class="ranking-caption"></div>
       <div id="ranking-list" class="ranking-list">Loading ranking…</div>
+      <button type="button" id="ranking-expand-btn" class="ranking-expand-btn">Show all countries</button>
     </div>
   </section>
 
