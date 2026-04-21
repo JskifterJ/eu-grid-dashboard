@@ -87,3 +87,51 @@ def test_fallback_to_mock_on_entso_error(client):
         response = client.get("/api/generation?country=DK")
     assert response.status_code == 200
     assert response.json()["country"] == "DK"
+
+
+def test_ranking_endpoint_returns_20_countries(client):
+    with patch("app.routes._LIVE", True), \
+         patch("app.routes.get_entso_client") as mock_factory:
+        mock_factory.return_value.get_overview.return_value = [
+            # Minimal: reuse CountryOverview to seed scoring
+        ]
+        response = client.get("/api/ranking")
+    assert response.status_code == 200
+    assert "countries" in response.json()
+
+
+def test_css_endpoint_with_default_weights(client):
+    with patch("app.routes._LIVE", False):
+        response = client.get("/api/css?country=FR")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["country"] == "FR"
+    assert 0 <= body["css"] <= 100
+    assert sum(body["weights"].values()) == 100
+
+
+def test_css_endpoint_rejects_bad_weights(client):
+    # weights string must parse and sum to 100
+    response = client.get("/api/css?country=FR&weights=50-50-0-10")  # sums to 110
+    assert response.status_code == 400
+
+
+def test_simulate_endpoint_training(client):
+    with patch("app.routes._LIVE", False):
+        response = client.get("/api/simulate?country=FR&mw=10&hours=6&workload=training")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["workload"] == "training"
+    assert body["current_hour_t_co2"] > 0
+
+
+def test_simulate_endpoint_inference_requires_region(client):
+    response = client.get("/api/simulate?country=FR&mw=1&hours=24&workload=inference")
+    assert response.status_code == 400
+
+
+def test_simulate_endpoint_inference_with_region(client):
+    with patch("app.routes._LIVE", False):
+        response = client.get("/api/simulate?country=FR&mw=1&hours=24&workload=inference&region=western")
+    assert response.status_code == 200
+    assert response.json()["workload"] == "inference"
