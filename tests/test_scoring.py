@@ -4,6 +4,9 @@ from app.scoring import (
     Weights, CountryMetrics, compute_css, rank_countries,
     DEFAULT_WEIGHTS, PRESET_GREEN, PRESET_COST,
 )
+from app.scoring import (
+    DEFAULT_CARBON_PRICE_EUR_PER_TCO2, carbon_internalized_price,
+)
 
 
 def _metrics(c, co2, price, ren, sigma):
@@ -67,3 +70,25 @@ def test_rank_countries_sorted_desc():
 
 def test_compute_css_empty_returns_empty():
     assert compute_css([], DEFAULT_WEIGHTS) == []
+
+
+def test_default_carbon_price_is_in_eu_ets_range():
+    # EU ETS has historically ranged €25-€100/tCO2; €75 is a reasonable 2026 default
+    assert 25.0 <= DEFAULT_CARBON_PRICE_EUR_PER_TCO2 <= 150.0
+
+
+def test_carbon_internalized_price_clean_grid_small_adder():
+    # 40 g/kWh × €75/t / 1000 = €3/MWh adder
+    eff = carbon_internalized_price(market_price_eur_mwh=70.0, co2_g_per_kwh=40.0, carbon_price_eur_per_tco2=75.0)
+    assert eff == pytest.approx(73.0, abs=0.01)
+
+
+def test_carbon_internalized_price_dirty_grid_large_adder():
+    # 600 g/kWh × €75/t / 1000 = €45/MWh adder
+    eff = carbon_internalized_price(market_price_eur_mwh=120.0, co2_g_per_kwh=600.0, carbon_price_eur_per_tco2=75.0)
+    assert eff == pytest.approx(165.0, abs=0.01)
+
+
+def test_carbon_internalized_price_zero_carbon_price_is_passthrough():
+    eff = carbon_internalized_price(market_price_eur_mwh=70.0, co2_g_per_kwh=600.0, carbon_price_eur_per_tco2=0.0)
+    assert eff == 70.0

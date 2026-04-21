@@ -73,6 +73,7 @@ class CSSBreakdown(BaseModel):
     renewable_score: float
     stability_score: float
     weights: dict[str, int]
+    carbon_price_eur_per_tco2: float = 0.0
 
 
 class RankingEntry(BaseModel):

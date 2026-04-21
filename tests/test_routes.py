@@ -135,3 +135,24 @@ def test_simulate_endpoint_inference_with_region(client):
         response = client.get("/api/simulate?country=FR&mw=1&hours=24&workload=inference&region=western")
     assert response.status_code == 200
     assert response.json()["workload"] == "inference"
+
+
+def test_css_with_carbon_price_increases_dirty_country_cost(client):
+    """At higher carbon price, a dirty country's effective cost goes up; cost score drops."""
+    with patch("app.routes._LIVE", False):
+        zero = client.get("/api/css?country=PL&carbon_price=0").json()
+        priced = client.get("/api/css?country=PL&carbon_price=100").json()
+    # Poland is high-CO2 — cost score should be lower (worse) with carbon adder
+    assert priced["cost_score"] <= zero["cost_score"]
+
+
+def test_ranking_response_includes_carbon_price(client):
+    with patch("app.routes._LIVE", False):
+        r = client.get("/api/ranking?carbon_price=80").json()
+    assert r.get("carbon_price_eur_per_tco2") == 80.0
+
+
+def test_css_default_carbon_price_is_75(client):
+    with patch("app.routes._LIVE", False):
+        body = client.get("/api/css?country=FR").json()
+    assert body["carbon_price_eur_per_tco2"] == 75.0

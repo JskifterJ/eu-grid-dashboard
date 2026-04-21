@@ -10,6 +10,21 @@ from dataclasses import dataclass
 Weights = dict[str, int]
 
 DEFAULT_WEIGHTS: Weights = {"carbon": 40, "cost": 30, "renewable": 20, "stability": 10}
+
+# EU ETS spot ~€75/tCO2 as of 2026-04. Configurable per-request.
+DEFAULT_CARBON_PRICE_EUR_PER_TCO2 = 75.0
+
+
+def carbon_internalized_price(market_price_eur_mwh: float, co2_g_per_kwh: float, carbon_price_eur_per_tco2: float) -> float:
+    """
+    Add the social cost of carbon to the market electricity price.
+
+    €/MWh added = (g/kWh) × (€/t) × (1 t / 1_000_000 g) × (1000 kWh / MWh)
+                = (g/kWh) × (€/t) / 1000
+
+    Returns the effective €/MWh.
+    """
+    return market_price_eur_mwh + co2_g_per_kwh * carbon_price_eur_per_tco2 / 1000.0
 PRESET_GREEN: Weights = {"carbon": 60, "cost": 15, "renewable": 20, "stability": 5}
 PRESET_COST: Weights = {"carbon": 10, "cost": 60, "renewable": 15, "stability": 15}
 
