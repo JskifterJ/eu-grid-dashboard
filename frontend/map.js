@@ -4,14 +4,16 @@
 const EUROPEAN_IDS = new Set([
   '276','250','826','578','752','208','246','756','40','528','56','616',
   '724','380','203','620','642','300','372','348','703','705','688','191',
-  '440','428','233','804','442','100','8','499','70','807',
+  '440','428','233','804','442','100','8','499','70','807','352','196',
 ]);
 
 const COUNTRY_MAP = {
   '276':'DE','250':'FR','826':'GB','578':'NO','752':'SE','208':'DK',
   '246':'FI','756':'CH','40':'AT','528':'NL','56':'BE','616':'PL',
   '724':'ES','380':'IT','203':'CZ','620':'PT','642':'RO','300':'GR',
-  '372':'IE','348':'HU',
+  '372':'IE','348':'HU','233':'EE','428':'LV','440':'LT','703':'SK',
+  '705':'SI','191':'HR','100':'BG','688':'RS','70':'BA','499':'ME',
+  '807':'MK','8':'AL','352':'IS','196':'CY','442':'LU',
 };
 
 const CENTROIDS = {
@@ -20,13 +22,19 @@ const CENTROIDS = {
   'AT':[14.5,47.6],'NL':[5.2,52.2],'BE':[4.4,50.5],'PL':[20,52],
   'ES':[-3.5,40],'IT':[12.5,42.5],'CZ':[15.5,49.8],'PT':[-8,39.5],
   'RO':[25,45.9],'GR':[22,39.5],'IE':[-8,53.2],'HU':[19,47.2],
+  'EE':[25,58.6],'LV':[24.6,56.9],'LT':[23.9,55.2],'SK':[19.7,48.7],
+  'SI':[15,46.1],'HR':[15.2,45.1],'BG':[25.5,42.7],'RS':[21,44],
+  'BA':[17.7,43.9],'ME':[19.4,42.7],'MK':[21.8,41.6],'AL':[20.2,41.1],
+  'IS':[-19,65],'CY':[33.4,35.1],'LU':[6.1,49.8],
 };
 
 window.MAP_FLAGS = {
   'DE':'🇩🇪','FR':'🇫🇷','GB':'🇬🇧','NO':'🇳🇴','SE':'🇸🇪','DK':'🇩🇰',
   'FI':'🇫🇮','CH':'🇨🇭','AT':'🇦🇹','NL':'🇳🇱','BE':'🇧🇪','PL':'🇵🇱',
   'ES':'🇪🇸','IT':'🇮🇹','CZ':'🇨🇿','PT':'🇵🇹','RO':'🇷🇴','GR':'🇬🇷',
-  'IE':'🇮🇪','HU':'🇭🇺',
+  'IE':'🇮🇪','HU':'🇭🇺','EE':'🇪🇪','LV':'🇱🇻','LT':'🇱🇹','SK':'🇸🇰',
+  'SI':'🇸🇮','HR':'🇭🇷','BG':'🇧🇬','RS':'🇷🇸','BA':'🇧🇦','ME':'🇲🇪',
+  'MK':'🇲🇰','AL':'🇦🇱','IS':'🇮🇸','CY':'🇨🇾','LU':'🇱🇺',
 };
 
 window.MAP_NAMES = {
@@ -34,6 +42,10 @@ window.MAP_NAMES = {
   'DK':'Denmark','FI':'Finland','CH':'Switzerland','AT':'Austria','NL':'Netherlands',
   'BE':'Belgium','PL':'Poland','ES':'Spain','IT':'Italy','CZ':'Czech Republic',
   'PT':'Portugal','RO':'Romania','GR':'Greece','IE':'Ireland','HU':'Hungary',
+  'EE':'Estonia','LV':'Latvia','LT':'Lithuania','SK':'Slovakia',
+  'SI':'Slovenia','HR':'Croatia','BG':'Bulgaria','RS':'Serbia',
+  'BA':'Bosnia & Herzegovina','ME':'Montenegro','MK':'North Macedonia',
+  'AL':'Albania','IS':'Iceland','CY':'Cyprus','LU':'Luxembourg',
 };
 
 window.GEN_COLORS = {
@@ -69,7 +81,7 @@ window.initMap = async function(onCountrySelect) {
   container.setAttribute('viewBox', `0 0 ${W} ${H}`);
   container.setAttribute('height', H);
 
-  _projection = d3.geoMercator().center([14, 54]).scale(W * 1.08).translate([W / 2, H / 2]);
+  _projection = d3.geoMercator().center([14, 56]).scale(W * 0.95).translate([W / 2, H / 2]);
   const path = d3.geoPath().projection(_projection);
   const svg = d3.select('#map-svg');
 
