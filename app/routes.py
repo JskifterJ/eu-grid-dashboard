@@ -7,9 +7,11 @@ from fastapi import APIRouter, HTTPException, Query
 from app.cache import Cache
 from app.entso import get_entso_client, AREA_CODES, COUNTRY_NAMES
 from app.ai import get_ai_briefing
+from app.briefing import get_structured_briefing
 from app.models import (
     GenerationData, PriceData, FlowData, GridSummary, OverviewData,
     CSSBreakdown, RankingEntry, SimulationResult, ForecastSeries, EvalResult,
+    StructuredBriefing,
 )
 from app.scoring import (
     CountryMetrics, compute_css, rank_countries,
@@ -29,6 +31,7 @@ ai_cache = Cache(ttl_seconds=3600)
 overview_cache = Cache(ttl_seconds=1800)
 forecast_cache = Cache(ttl_seconds=900)
 ranking_cache = Cache(ttl_seconds=900)
+briefing_cache = Cache(ttl_seconds=3600)
 
 SUPPORTED_COUNTRIES = set(AREA_CODES.keys())
 _LIVE = bool(os.environ.get("ENTSO_API_KEY", "").strip())
@@ -373,3 +376,40 @@ def get_simulate(
         css_results=css,
     )
     return result
+
+
+@router.get("/api/briefing", response_model=StructuredBriefing)
+def get_briefing(
+    country: str = Query(...),
+    workload: str = Query("training"),
+    carbon_price: Optional[float] = Query(DEFAULT_CARBON_PRICE_EUR_PER_TCO2),
+):
+    _validate_country(country)
+    if workload not in ("training", "fine-tuning", "inference"):
+        raise HTTPException(400, "workload must be one of training|fine-tuning|inference")
+
+    cache_key = f"briefing:{country}:{workload}:{carbon_price}"
+    cached = briefing_cache.get(cache_key)
+    if cached:
+        return cached
+
+    gen = _get_generation(country)
+    prices = _get_prices(country)
+    # Use current CSS for context
+    grid = _build_grid(carbon_price)
+    w = weights_for_workload(workload)
+    results = compute_css(grid, w)
+    target = next((r for r in results if r.country == country), None)
+    css_val = target.css if target else 50.0
+
+    briefing = get_structured_briefing(
+        country=country,
+        country_name=COUNTRY_NAMES.get(country, country),
+        co2_g_per_kwh=gen.co2_intensity,
+        price_eur_mwh=prices.current_eur_mwh or 0.0,
+        renewable_pct=gen.renewable_pct,
+        css=css_val,
+        workload=workload,
+    )
+    briefing_cache.set(cache_key, briefing)
+    return briefing
