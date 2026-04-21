@@ -255,6 +255,24 @@
             <label class="sim-label" for="sim-carbon">Carbon price (€/tCO₂)</label>
             <div class="sim-input-wrap"><input id="sim-carbon" type="number" class="sim-input" value="75" min="0" step="5"><span class="sim-unit">€/t</span></div>
           </div>
+          <div class="sim-field">
+            <label class="sim-label">Accounting</label>
+            <div class="sim-pills" id="sim-lca">
+              <button type="button" class="sim-pill active" data-value="operational">Operational</button>
+              <button type="button" class="sim-pill" data-value="full">Full LCA</button>
+            </div>
+          </div>
+          <div class="sim-field" id="sim-hardware-field" style="display:none">
+            <label class="sim-label" for="sim-hardware">Hardware</label>
+            <select id="sim-hardware" class="sim-select">
+              <option value="H100" selected>NVIDIA H100 · 700W · 1300 kg embodied</option>
+              <option value="H200">NVIDIA H200 · 700W · 1400 kg embodied</option>
+              <option value="B200">NVIDIA B200 · 1000W · 1900 kg embodied</option>
+              <option value="A100">NVIDIA A100 · 400W · 900 kg embodied</option>
+              <option value="MI300X">AMD MI300X · 750W · 1500 kg embodied</option>
+              <option value="Groq-LPU">Groq LPU · 350W · 600 kg embodied</option>
+            </select>
+          </div>
           <button type="button" id="sim-share-btn" class="sim-share">Copy shareable link</button>
         </div>
 

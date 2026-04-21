@@ -5,6 +5,8 @@ const SimState = {
   hours: 6,
   region: "western",
   carbon_price: 75,
+  lca: false,
+  hardware: "H100",
 };
 
 const SIM_COUNTRIES = [
@@ -107,6 +109,31 @@ function _renderOutput(result) {
     </div>
     ${latencyHtml}
   `;
+
+  // Append LCA breakdown if present
+  if (result.lca) {
+    const l = result.lca;
+    const opPct = Math.round(l.operational_share_pct);
+    const hwPct = Math.round(l.embodied_hardware_kg / l.total_kg * 100);
+    const dcPct = Math.round(l.embodied_datacenter_kg / l.total_kg * 100);
+    el.insertAdjacentHTML('beforeend', `
+      <div class="lca-breakdown">
+        <div class="lca-header">
+          <span class="lca-eyebrow mono">Full LCA · ${l.hardware} · PUE ${l.pue.toFixed(2)} · ${l.life_years}-yr life</span>
+          <span class="lca-total"><span class="lca-total-val">${_fmtT(l.total_kg)}</span> <span class="sim-unit-sm">kg CO₂ total</span></span>
+        </div>
+        <div class="lca-bar">
+          <span class="lca-seg operational" style="width:${opPct}%" title="Operational: ${_fmtT(l.operational_co2_kg)} kg — grid CO₂ × PUE"></span><span class="lca-seg hardware" style="width:${hwPct}%" title="Embodied hardware: ${_fmtT(l.embodied_hardware_kg)} kg — GPU manufacturing amortized"></span><span class="lca-seg dc" style="width:${dcPct}%" title="Embodied datacenter: ${_fmtT(l.embodied_datacenter_kg)} kg — building+cooling+power infra amortized"></span>
+        </div>
+        <div class="lca-legend">
+          <span class="lca-legend-item"><span class="lca-dot operational"></span>Operational · ${_fmtT(l.operational_co2_kg)} kg (${opPct}%)</span>
+          <span class="lca-legend-item"><span class="lca-dot hardware"></span>Embodied hardware · ${_fmtT(l.embodied_hardware_kg)} kg (${hwPct}%)</span>
+          <span class="lca-legend-item"><span class="lca-dot dc"></span>Embodied datacenter · ${_fmtT(l.embodied_datacenter_kg)} kg (${dcPct}%)</span>
+        </div>
+        <p class="lca-note">Embodied figures amortize GPU manufacturing (IPCC/NVIDIA ESG medians) and datacenter construction (LBNL 7 kg CO₂/kW/yr) over a ${l.life_years}-year service life. PUE reflects regional cooling load (Nordic ~1.1, hot climates ~1.4).</p>
+      </div>
+    `);
+  }
 }
 
 function _co2ColorForRibbon(val) {
@@ -201,10 +228,11 @@ async function runSimulation() {
       carbon_price: SimState.carbon_price,
     });
     if (SimState.workload === "inference") params.set("region", SimState.region);
+    if (SimState.lca) params.set("lca", "true");
     const data = await fetchJson(`/api/simulate?${params}`);
     _renderOutput(data);
     _syncUrl();
-    renderTimeOfDay();  // NEW: refresh ribbon
+    renderTimeOfDay();  // refresh ribbon
   } catch (e) {
     if (el) el.innerHTML = `<div class="sim-loading" style="color:var(--orange)">Failed: ${e.message || e}</div>`;
     console.error(e);
@@ -227,6 +255,7 @@ function _syncUrl() {
   params.set("hours", SimState.hours);
   params.set("carbon_price", SimState.carbon_price);
   if (SimState.workload === "inference") params.set("region", SimState.region);
+  if (SimState.lca) { params.set("lca", "true"); params.set("hardware", SimState.hardware); }
   // Only update if simulator section is present
   if (document.getElementById("simulator")) {
     history.replaceState(null, "", `${window.location.pathname}?${params}${window.location.hash.includes('#') ? '' : '#simulator'}`);
@@ -241,24 +270,33 @@ function _hydrateFromUrl() {
   if (p.has("hours")) SimState.hours = parseFloat(p.get("hours")) || SimState.hours;
   if (p.has("carbon_price")) SimState.carbon_price = parseFloat(p.get("carbon_price")) || SimState.carbon_price;
   if (p.has("region")) SimState.region = p.get("region");
+  if (p.get("lca") === "true" || p.get("lca") === "1") SimState.lca = true;
+  if (p.has("hardware")) SimState.hardware = p.get("hardware");
 }
 
 function _applyStateToInputs() {
   document.querySelectorAll("#sim-workload .sim-pill").forEach(b => {
     b.classList.toggle("active", b.dataset.value === SimState.workload);
   });
+  document.querySelectorAll("#sim-lca .sim-pill").forEach(b => {
+    b.classList.toggle("active", (b.dataset.value === "full") === SimState.lca);
+  });
   const countrySel = document.getElementById("sim-country");
   const regionSel = document.getElementById("sim-region");
   const mw = document.getElementById("sim-mw");
   const hours = document.getElementById("sim-hours");
   const carbon = document.getElementById("sim-carbon");
+  const hardware = document.getElementById("sim-hardware");
   const regionField = document.getElementById("sim-region-field");
+  const hardwareField = document.getElementById("sim-hardware-field");
   if (countrySel) countrySel.value = SimState.country;
   if (regionSel) regionSel.value = SimState.region;
   if (mw) mw.value = SimState.mw;
   if (hours) hours.value = SimState.hours;
   if (carbon) carbon.value = SimState.carbon_price;
+  if (hardware) hardware.value = SimState.hardware;
   if (regionField) regionField.style.display = SimState.workload === "inference" ? "" : "none";
+  if (hardwareField) hardwareField.style.display = SimState.lca ? "" : "none";
 }
 
 function _wireInputs() {
@@ -279,6 +317,19 @@ function _wireInputs() {
   if (hours) hours.addEventListener("input", () => { SimState.hours = parseFloat(hours.value) || 1; _debouncedRun(); });
   const carbon = document.getElementById("sim-carbon");
   if (carbon) carbon.addEventListener("input", () => { SimState.carbon_price = parseFloat(carbon.value) || 0; _debouncedRun(); });
+
+  document.querySelectorAll("#sim-lca .sim-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      SimState.lca = btn.dataset.value === "full";
+      _applyStateToInputs();
+      runSimulation();
+    });
+  });
+  const hardware = document.getElementById("sim-hardware");
+  if (hardware) hardware.addEventListener("change", () => {
+    SimState.hardware = hardware.value;
+    if (SimState.lca) runSimulation();
+  });
 
   const shareBtn = document.getElementById("sim-share-btn");
   if (shareBtn) shareBtn.addEventListener("click", async () => {
