@@ -570,3 +570,44 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015
   content: " →";
   opacity: 0.6;
 }
+
+.historical-section { padding: 40px 0; background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.hist-header { margin-bottom: 22px; max-width: 720px; }
+.hist-eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: var(--accent); margin-bottom: 6px; }
+.hist-title { font-size: clamp(22px, 3vw, 30px); line-height: 1.2; color: var(--text); margin-bottom: 8px; }
+.hist-sub { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+.hist-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.hist-card {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.hist-card .hist-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--dim); font-family: var(--mono);
+}
+.hist-card .hist-then {
+  font-size: 13px; color: var(--muted); font-family: var(--mono);
+}
+.hist-card .hist-arrow { color: var(--accent); margin: 0 4px; }
+.hist-card .hist-now {
+  font-family: var(--serif); font-size: 34px; font-weight: 600;
+  line-height: 1; color: var(--text); letter-spacing: -0.02em;
+}
+.hist-card .hist-delta {
+  font-size: 11px; color: var(--green); font-family: var(--mono);
+  font-weight: 600;
+}
+.hist-card .hist-delta.negative { color: var(--green); }
+.hist-card .hist-delta.positive { color: var(--accent); }
+.hist-card .hist-bar {
+  height: 4px; background: var(--bg-card2); border-radius: 2px; overflow: hidden; position: relative;
+}
+.hist-card .hist-bar-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+}
+.hist-footnote {
+  font-size: 10px; color: var(--dim); font-style: italic;
+  border-top: 1px solid var(--border); padding-top: 10px; line-height: 1.5;
+}
