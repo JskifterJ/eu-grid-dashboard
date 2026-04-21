@@ -1,12 +1,16 @@
 const RankingState = {
   preset: "balanced",
   workload: "training",
+  region: "western",
 };
 
 async function renderRanking() {
   const list = document.getElementById("ranking-list");
   try {
-    const data = await fetchRanking(RankingState.preset === "balanced" ? null : RankingState.preset);
+    const params = new URLSearchParams({ workload: RankingState.workload });
+    if (RankingState.workload === "inference") params.set("region", RankingState.region);
+    if (RankingState.preset !== "balanced") params.set("weights", RankingState.preset);
+    const data = await fetchJson(`/api/ranking?${params}`);
     list.innerHTML = "";
     data.countries.forEach((c, i) => {
       const card = document.createElement("div");
@@ -39,8 +43,15 @@ function wireRankingControls() {
       document.querySelectorAll(".workload-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       RankingState.workload = btn.dataset.workload;
-      // Workload shapes the simulator (Plan B); for now it annotates only.
+      const regionSel = document.getElementById("region-select");
+      if (regionSel) regionSel.style.display = btn.dataset.workload === "inference" ? "" : "none";
+      renderRanking();
     });
+  });
+  const regionSel = document.getElementById("region-select");
+  if (regionSel) regionSel.addEventListener("change", () => {
+    RankingState.region = regionSel.value;
+    renderRanking();
   });
 }
 

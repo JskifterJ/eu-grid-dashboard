@@ -83,8 +83,16 @@
           </div>
           <div class="workload-switcher" role="radiogroup" aria-label="workload mode">
             <button class="workload-btn active" data-workload="training">Training</button>
+            <button class="workload-btn" data-workload="fine-tuning">Fine-tuning</button>
             <button class="workload-btn" data-workload="inference">Inference</button>
           </div>
+          <select id="region-select" class="region-select" style="display:none">
+            <option value="central">🛰 Central EU</option>
+            <option value="western" selected>🛰 Western EU</option>
+            <option value="northern">🛰 Northern EU</option>
+            <option value="southern">🛰 Southern EU</option>
+            <option value="iberian">🛰 Iberian</option>
+          </select>
         </div>
       </div>
       <div id="ranking-list" class="ranking-list">Loading ranking…</div>
