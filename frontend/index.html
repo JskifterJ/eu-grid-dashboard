@@ -104,6 +104,75 @@
     </div>
   </section>
 
+  <section class="methodology">
+    <div class="container">
+      <details class="method-details">
+        <summary class="method-summary">
+          <span class="method-icon">∑</span>
+          <span>How the Compute Siting Score works</span>
+          <span class="method-chevron">▸</span>
+        </summary>
+        <div class="method-body">
+          <div class="method-intro">
+            <p>CSS is a <strong>0–100 score per country per hour</strong>. It combines four dimensions, weighted by a user-selectable preset. Each dimension is <strong>min-max normalized across all 35 countries</strong> for the same hour — so 100 is "best in Europe right now," not an absolute.</p>
+          </div>
+
+          <div class="method-grid">
+            <div class="method-card">
+              <h4>1. Carbon intensity</h4>
+              <p class="method-source">ENTSO-E generation mix × <a href="https://www.ipcc.ch/report/ar5/" target="_blank" rel="noreferrer">IPCC AR5</a> lifecycle emission factors.</p>
+              <p>Grams of CO₂ per kWh of electricity delivered. Lower is better. IPCC median values: wind 11, nuclear 12, hydro 24, solar 41, gas 490, coal 820, lignite 1054, oil shale 1100.</p>
+            </div>
+            <div class="method-card">
+              <h4>2. Cost (carbon-internalized)</h4>
+              <p class="method-source">ENTSO-E day-ahead auction €/MWh + EU ETS carbon adder.</p>
+              <p>Market €/MWh + (CO₂_g/kWh × €75/tCO₂ ÷ 1000). At €75/tCO₂ (2026 EU ETS spot), a 600 g/kWh grid adds €45/MWh. Internalizes the social cost of carbon into the economic signal.</p>
+            </div>
+            <div class="method-card">
+              <h4>3. Renewable share</h4>
+              <p class="method-source">ENTSO-E generation by source.</p>
+              <p>% of current output from wind, solar, hydro, geothermal. Directional signal separate from carbon: a nuclear-heavy grid scores low here but high on carbon, and that tension is real.</p>
+            </div>
+            <div class="method-card">
+              <h4>4. Price stability</h4>
+              <p class="method-source">24h-rolling σ of ENTSO-E day-ahead prices.</p>
+              <p>Intra-day standard deviation of €/MWh. Lower is better — a volatile grid makes capex-intensive GPU scheduling harder.</p>
+            </div>
+          </div>
+
+          <h4 class="method-section-title">The formula</h4>
+          <div class="method-formula">
+            <code>CSS(country) = 0.4·carbon_n + 0.3·cost_n + 0.2·renewable_n + 0.1·stability_n</code>
+            <p class="method-note">Weights shown are the <strong>Balanced</strong> preset. <strong>Green</strong> shifts to 60/15/20/5. <strong>Cost</strong> shifts to 10/60/15/15. Workload presets (training/fine-tuning/inference) use their own default weights — see the <em>i</em> icon beside the workload switcher.</p>
+          </div>
+
+          <h4 class="method-section-title">Inference latency penalty</h4>
+          <div class="method-formula">
+            <p>For inference workloads, each country's CSS is attenuated by physical distance from the chosen serving region's population centroid:</p>
+            <code>penalty(c, region) = min(0.4, max(0, (dist_km(c, region) − 500) / 2500))</code>
+            <code>CSS_inference(c) = CSS(c) × (1 − penalty(c, region))</code>
+            <p class="method-note">500 km free zone ≈ real EU CDN round-trip tolerance. Penalty tops out at 40% around 3000 km. This is the <em>physics</em> of real-time serving: a Stockholm site for Iberian users means every request eats ~50 ms of extra one-way latency — deadly for chat UIs.</p>
+          </div>
+
+          <h4 class="method-section-title">Forecast (24h-ahead)</h4>
+          <div class="method-formula">
+            <p><strong>Price forecast</strong>: ENTSO-E day-ahead auction publishes every hour of tomorrow — this <em>is</em> the market's forecast.</p>
+            <p><strong>CO₂ forecast</strong>: ENTSO-E day-ahead generation-forecast-by-source × the same IPCC factors we use for the current hour.</p>
+            <p><strong>Eval benchmark</strong>: naive seasonal baseline (same-hour-same-weekday mean over last 4 weeks) is computed alongside to measure whether the market forecast actually beats a trivial baseline — surfaced as MAPE on the (upcoming) forecast-accuracy panel.</p>
+          </div>
+
+          <h4 class="method-section-title">Known caveats</h4>
+          <ul class="method-caveats">
+            <li>Multi-zone countries (DE_LU, NO_1..NO_5, SE_1..SE_4, IT_NORD..IT_SARD, DK_1/DK_2) are aggregated to country level by summing generation GW and generation-weight-averaging prices. Flows are queried on the primary zone only.</li>
+            <li>Bidding-zone coverage differs across countries — some Balkan/Baltic data may be sparse in live ENTSO-E; mock data fills gaps when the API key is absent.</li>
+            <li>IPCC AR5 (2014) emission factors are lifecycle medians; newer IPCC AR6 values exist but AR5 remains the canonical reference for cross-country comparison.</li>
+            <li>The PEF (primary energy factor) toggle on the generation mix is separate from CSS — CSS scores on electricity-delivered basis because that's what compute buys.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
   <div class="container">
     <div class="stats-strip">
       <div class="stat-item">
