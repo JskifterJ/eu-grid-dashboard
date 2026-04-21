@@ -12,6 +12,7 @@
   <script src="map.js" defer></script>
   <script src="charts.js" defer></script>
   <script src="hero.js" defer></script>
+  <script src="ranking.js" defer></script>
 </head>
 <body>
 
@@ -67,6 +68,26 @@
         <span id="hero-worst-emit" class="accent">—</span> t in
         <span id="hero-worst-country">—</span>.
       </div>
+    </div>
+  </section>
+
+  <section class="ranking-strip">
+    <div class="container">
+      <div class="ranking-header">
+        <span class="ranking-title mono">Compute Siting Score · all 20 countries</span>
+        <div class="ranking-controls">
+          <div class="preset-switcher" role="radiogroup" aria-label="weights preset">
+            <button class="preset-btn" data-preset="green">Green</button>
+            <button class="preset-btn active" data-preset="balanced">Balanced</button>
+            <button class="preset-btn" data-preset="cost">Cost</button>
+          </div>
+          <div class="workload-switcher" role="radiogroup" aria-label="workload mode">
+            <button class="workload-btn active" data-workload="training">Training</button>
+            <button class="workload-btn" data-workload="inference">Inference</button>
+          </div>
+        </div>
+      </div>
+      <div id="ranking-list" class="ranking-list">Loading ranking…</div>
     </div>
   </section>
 
