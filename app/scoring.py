@@ -28,6 +28,20 @@ def carbon_internalized_price(market_price_eur_mwh: float, co2_g_per_kwh: float,
 PRESET_GREEN: Weights = {"carbon": 60, "cost": 15, "renewable": 20, "stability": 5}
 PRESET_COST: Weights = {"carbon": 10, "cost": 60, "renewable": 15, "stability": 15}
 
+# Workload presets — distinct from user-facing weight presets. These baseline
+# weights reflect how siting concerns differ per workload type.
+WORKLOAD_PRESETS: dict[str, Weights] = {
+    "training":    {"carbon": 40, "cost": 30, "renewable": 20, "stability": 10},
+    "fine-tuning": {"carbon": 30, "cost": 40, "renewable": 20, "stability": 10},
+    "inference":   {"carbon": 20, "cost": 45, "renewable": 15, "stability": 20},
+}
+
+
+def weights_for_workload(workload: str) -> Weights:
+    if workload not in WORKLOAD_PRESETS:
+        raise KeyError(f"unknown workload {workload!r}; expected one of {set(WORKLOAD_PRESETS)}")
+    return dict(WORKLOAD_PRESETS[workload])
+
 
 @dataclass
 class CountryMetrics:

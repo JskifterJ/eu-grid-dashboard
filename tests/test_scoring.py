@@ -3,6 +3,7 @@ import pytest
 from app.scoring import (
     Weights, CountryMetrics, compute_css, rank_countries,
     DEFAULT_WEIGHTS, PRESET_GREEN, PRESET_COST,
+    WORKLOAD_PRESETS, weights_for_workload,
 )
 from app.scoring import (
     DEFAULT_CARBON_PRICE_EUR_PER_TCO2, carbon_internalized_price,
@@ -92,3 +93,28 @@ def test_carbon_internalized_price_dirty_grid_large_adder():
 def test_carbon_internalized_price_zero_carbon_price_is_passthrough():
     eff = carbon_internalized_price(market_price_eur_mwh=70.0, co2_g_per_kwh=600.0, carbon_price_eur_per_tco2=0.0)
     assert eff == 70.0
+
+
+def test_three_workload_presets_defined():
+    assert set(WORKLOAD_PRESETS.keys()) == {"training", "fine-tuning", "inference"}
+
+
+def test_each_workload_preset_sums_to_100():
+    for w in WORKLOAD_PRESETS.values():
+        assert sum(w.values()) == 100
+
+
+def test_training_emphasizes_carbon_and_cost():
+    w = WORKLOAD_PRESETS["training"]
+    assert w["carbon"] >= 35
+    assert w["cost"] >= 25
+
+
+def test_inference_emphasizes_cost():
+    w = WORKLOAD_PRESETS["inference"]
+    assert w["cost"] >= 35
+
+
+def test_weights_for_workload_unknown_raises():
+    with pytest.raises(KeyError):
+        weights_for_workload("inferring")
