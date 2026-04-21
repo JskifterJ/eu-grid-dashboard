@@ -364,15 +364,18 @@ def get_simulate(
     weights: Optional[str] = Query(None),
     carbon_price: Optional[float] = Query(DEFAULT_CARBON_PRICE_EUR_PER_TCO2),
     lca: bool = Query(False),
+    hardware: str = Query("H100"),
 ):
     _validate_country(country)
     _validate_country(hub)
-    if workload not in ("training", "inference"):
-        raise HTTPException(status_code=400, detail="workload must be 'training' or 'inference'")
+    if workload not in WORKLOAD_PRESETS:
+        raise HTTPException(status_code=400, detail=f"workload must be one of {sorted(WORKLOAD_PRESETS)}")
     if workload == "inference" and not region:
         raise HTTPException(status_code=400, detail="inference requires region")
-    if region and region not in ("central", "western", "northern", "southern", "iberian"):
-        raise HTTPException(status_code=400, detail="region must be central|western|northern|southern|iberian")
+    if region and region not in VALID_REGIONS:
+        raise HTTPException(status_code=400, detail=f"region must be one of {sorted(VALID_REGIONS)}")
+    if lca and hardware not in GPU_EMBODIED_KG_CO2:
+        raise HTTPException(status_code=400, detail=f"hardware must be one of {sorted(GPU_EMBODIED_KG_CO2)}")
 
     effective_carbon_price = carbon_price if carbon_price is not None else DEFAULT_CARBON_PRICE_EUR_PER_TCO2
     w = _resolve_weights(workload, weights)
@@ -400,7 +403,7 @@ def get_simulate(
         gen = _get_generation(country)
         result.lca = lca_breakdown(
             mw=mw, hours=hours, co2_g_per_kwh=gen.co2_intensity,
-            hardware="H100", pue=None, life_years=3, country=country,
+            hardware=hardware, pue=None, life_years=3, country=country,
         )
     return result
 
