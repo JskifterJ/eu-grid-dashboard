@@ -11,6 +11,7 @@
   <script src="api.js" defer></script>
   <script src="map.js" defer></script>
   <script src="charts.js" defer></script>
+  <script src="hero.js" defer></script>
 </head>
 <body>
 
@@ -48,15 +49,26 @@
 </nav>
 
 <main>
-  <div class="container">
-    <div id="ai-card" class="ai-card">
-      <div class="ai-icon">✦</div>
-      <div>
-        <div id="ai-label" class="ai-label">AI Grid Briefing · loading…</div>
-        <div id="ai-text" class="ai-text">Fetching current grid conditions…</div>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow mono">An interactive essay · Updated live</div>
+      <h1 class="hero-title">
+        Europe's grid is changing hour by hour.
+        <em>So is the right answer to where AI should run.</em>
+      </h1>
+      <div class="hero-live">
+        Right now <span id="hero-time" class="accent">—</span>, the cleanest watt in Europe is in
+        <span id="hero-best-country" class="accent">—</span>
+        at <span id="hero-best-co2" class="accent">—</span> g CO₂/kWh · €<span id="hero-best-price">—</span>/MWh.
+        A <span id="hero-mw">10</span> MW training run for
+        <span id="hero-hours">6</span> h emits
+        <span id="hero-best-emit" class="accent">—</span> t in
+        <span id="hero-best-country2">—</span> vs
+        <span id="hero-worst-emit" class="accent">—</span> t in
+        <span id="hero-worst-country">—</span>.
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="container">
     <div class="stats-strip">

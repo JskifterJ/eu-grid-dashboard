@@ -30,3 +30,32 @@ window.fetchSummary = async function(country) {
   if (!res.ok) throw new Error(`summary fetch failed: ${res.status}`);
   return res.json();
 };
+
+async function fetchJson(path) {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`fetch failed: ${res.status} ${path}`);
+  return res.json();
+}
+
+window.fetchRanking = async function(weights) {
+  const q = weights ? `?weights=${encodeURIComponent(weights)}` : "";
+  return fetchJson(`/api/ranking${q}`);
+};
+
+window.fetchCss = async function(country, weights) {
+  const params = new URLSearchParams({ country });
+  if (weights) params.set("weights", weights);
+  return fetchJson(`/api/css?${params}`);
+};
+
+window.fetchForecast = async function(country) {
+  return fetchJson(`/api/forecast?country=${country}`);
+};
+
+window.fetchSimulate = async function({ country, mw, hours, workload, region, hub, weights }) {
+  const params = new URLSearchParams({ country, mw, hours, workload });
+  if (region) params.set("region", region);
+  if (hub) params.set("hub", hub);
+  if (weights) params.set("weights", weights);
+  return fetchJson(`/api/simulate?${params}`);
+};
