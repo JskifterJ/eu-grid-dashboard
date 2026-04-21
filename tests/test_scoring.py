@@ -118,3 +118,39 @@ def test_inference_emphasizes_cost():
 def test_weights_for_workload_unknown_raises():
     with pytest.raises(KeyError):
         weights_for_workload("inferring")
+
+
+from app.scoring import apply_per_country_latency_penalty
+
+
+def test_apply_latency_penalty_no_region_passthrough():
+    results = compute_css([
+        _metrics("FR", 40, 70, 90, 5),
+        _metrics("PT", 200, 80, 60, 8),
+    ], DEFAULT_WEIGHTS)
+    out = apply_per_country_latency_penalty(results, region=None)
+    assert [r.css for r in out] == [r.css for r in results]
+
+
+def test_apply_latency_penalty_western_favors_close_country():
+    # PT edges FR on cost (65 vs 70) so PT has a non-zero base CSS to discount.
+    results = compute_css([
+        _metrics("FR", 40, 70, 90, 5),
+        _metrics("PT", 100, 65, 80, 6),
+    ], DEFAULT_WEIGHTS)
+    out = apply_per_country_latency_penalty(results, region="western")
+    fr_out = next(r for r in out if r.country == "FR")
+    pt_out = next(r for r in out if r.country == "PT")
+    fr_in = next(r for r in results if r.country == "FR")
+    pt_in = next(r for r in results if r.country == "PT")
+    # FR is in western-zone (penalty=0); PT pays a small penalty
+    assert fr_out.css == fr_in.css
+    assert pt_out.css < pt_in.css
+
+
+def test_apply_latency_penalty_northern_far_country_drops():
+    results = compute_css([_metrics("PT", 100, 75, 80, 6)], DEFAULT_WEIGHTS)
+    out = apply_per_country_latency_penalty(results, region="northern")
+    # PT scored alone gets css=50 (single-country normalization). With northern
+    # latency penalty ≈ 0.4, css drops to ≈ 30.
+    assert 27 < out[0].css < 33

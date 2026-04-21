@@ -5,6 +5,7 @@ CSS(c) = Σ w_d × normalized_d(c)  where Σ w = 100, each score ∈ [0, 100].
 Dimensions where lower is better are flipped during normalization.
 """
 from dataclasses import dataclass
+from typing import Optional
 
 
 Weights = dict[str, int]
@@ -109,3 +110,28 @@ def compute_css(metrics: list[CountryMetrics], weights: Weights) -> list[CSSResu
 
 def rank_countries(results: list[CSSResult]) -> list[CSSResult]:
     return sorted(results, key=lambda r: r.css, reverse=True)
+
+
+def apply_per_country_latency_penalty(
+    results: list[CSSResult],
+    region: Optional[str],
+) -> list[CSSResult]:
+    """For each country, multiply its CSS by (1 - latency_penalty(country, region))."""
+    if region is None:
+        return results
+    from app.geo import latency_penalty  # lazy to avoid any cyclic-import risk
+    out: list[CSSResult] = []
+    for r in results:
+        try:
+            penalty = latency_penalty(r.country, region)
+        except KeyError:
+            penalty = 0.0
+        out.append(CSSResult(
+            country=r.country,
+            css=round(r.css * (1 - penalty), 2),
+            carbon_score=r.carbon_score,
+            cost_score=r.cost_score,
+            renewable_score=r.renewable_score,
+            stability_score=r.stability_score,
+        ))
+    return out
