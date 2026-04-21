@@ -175,23 +175,28 @@ function _addDenmarkPin() {
 window.drawFlowArrows = function(flows, fromCountry) {
   _svgG.selectAll('.flow-arrow').remove();
   if (!flows || !fromCountry) return;
-  const fromPos = CENTROIDS[fromCountry];
-  if (!fromPos) return;
-  const [x1, y1] = _projection(fromPos);
+  const selPos = CENTROIDS[fromCountry];
+  if (!selPos) return;
+  const [sx, sy] = _projection(selPos);
 
   flows.forEach(flow => {
-    const toCode = Object.entries(window.MAP_NAMES).find(([k, v]) => v === flow.partner)?.[0];
-    if (!toCode || !CENTROIDS[toCode]) return;
-    const [x2, y2] = _projection(CENTROIDS[toCode]);
+    const partnerCode = Object.entries(window.MAP_NAMES).find(([k, v]) => v === flow.partner)?.[0];
+    if (!partnerCode || !CENTROIDS[partnerCode]) return;
+    const [px, py] = _projection(CENTROIDS[partnerCode]);
+
+    // Geometry: source = origin of flow, dest = receiver
+    const isExport = flow.direction === 'export';
+    const [x1, y1, x2, y2] = isExport ? [sx, sy, px, py] : [px, py, sx, sy];
+
     const mx = (x1 + x2) / 2 + (y2 - y1) * 0.2;
     const my = (y1 + y2) / 2 - (x2 - x1) * 0.2;
-    const isExport = flow.direction === 'export';
+
     _svgG.append('path')
       .attr('class', 'flow-arrow')
       .attr('d', `M${x1},${y1} Q${mx},${my} ${x2},${y2}`)
       .attr('fill', 'none')
       .attr('stroke', isExport ? '#f78166' : '#58a6ff')
-      .attr('stroke-width', 1.2).attr('opacity', 0.55)
+      .attr('stroke-width', 1.4).attr('opacity', 0.7)
       .attr('marker-end', isExport ? 'url(#arrowOrange)' : 'url(#arrowBlue)');
   });
 };
