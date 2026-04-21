@@ -162,6 +162,91 @@ The **500 km free zone** reflects realistic EU CDN experience — within ~500 km
 
 ---
 
+## Time-of-day optimization
+
+Given a 24-hour CO₂ forecast for a country and a desired workload duration of N hours, the optimizer sweeps every contiguous N-hour window in the forecast and identifies the start index that minimizes mean carbon intensity.
+
+**Best-window formula:**
+
+```
+best_start = argmin_{i}  mean(co2[i .. i+N])
+```
+
+where `co2` is the hourly forecast array (g CO₂/kWh) and the window wraps only within the 24-hour horizon (no wrap-around).
+
+**Savings metrics:**
+
+```
+savings_pct  = (worst_avg − best_avg) / worst_avg × 100
+kg_avoided   = mw × hours × (worst_avg − best_avg) / 1 000 000
+```
+
+`worst_avg` is the mean CO₂ of the worst N-hour window; `best_avg` is the mean of the best. `kg_avoided` converts g CO₂/kWh × GW-hours to kg CO₂ (÷ 10⁶ to go from g to kg, accounting for GW → kW unit alignment).
+
+**Caveat:** Real training runs may require a contiguous window longer than 24 hours. The sweep logic generalizes to any forecast horizon, but the dashboard currently publishes only 24-hour ENTSO-E day-ahead forecasts. Longer windows require a multi-day or medium-term forecast that ENTSO-E does not currently expose via the Transparency Platform.
+
+---
+
+## Life-cycle assessment (LCA)
+
+The simulator's **Full LCA** mode decomposes total workload carbon into three components:
+
+### 1. Operational (electricity)
+
+```
+operational_kg = mw × hours × co2_g_per_kwh × pue / 1 000 000
+```
+
+`pue` (Power Usage Effectiveness) scales the compute draw to total datacenter power. PUE defaults by region:
+
+| Region | Default PUE |
+|---|---|
+| Nordic (NO, SE, FI, IS) | 1.10 |
+| Northern EU (DK, NL, IE, EE, LV, LT) | 1.20 |
+| Central EU (DE, FR, BE, AT, CH, PL, CZ, SK, HU) | 1.25 |
+| Southern EU (IT, ES, PT, GR, HR, SI, RO, BG) | 1.40 |
+| Island / peripheral (MT, CY) | 1.45 |
+
+### 2. Embodied hardware (GPU manufacturing)
+
+```
+gpus_per_mw        = 1 000 / gpu_power_kw
+embodied_hw_kg     = gpu_embodied_kg × gpus_per_mw × mw × hours / (life_years × 8760)
+```
+
+GPU power draw (`gpu_power_kw`) and embodied CO₂ (`gpu_embodied_kg`) are looked up from the hardware table below. `life_years = 3` (hyperscale / neocloud standard). The formula amortizes total manufacturing emissions linearly over the hardware's service life and allocates the fraction consumed by this workload.
+
+**GPU embodied CO₂ table (kg CO₂e per unit):**
+
+| GPU | Embodied CO₂ (kg) | TDP (W) | Source |
+|---|---|---|---|
+| A100 80 GB | 900 | 400 | NVIDIA ESG Report; Patterson et al. 2021 |
+| H100 SXM | 1,300 | 700 | NVIDIA ESG Report; Patterson et al. 2021 |
+| H200 SXM | 1,400 | 700 | NVIDIA ESG Report (estimated) |
+| B200 | 1,900 | 1,000 | NVIDIA ESG Report (estimated) |
+| MI300X | 1,500 | 750 | AMD Sustainability Filing |
+| Groq LPU | 600 | 300 | Groq LCA estimate |
+
+All values carry **±30% uncertainty** — manufacturing process disclosures are incomplete and vary by facility. Treat these as order-of-magnitude anchors, not precise figures.
+
+**Citations:** NVIDIA Corporate Sustainability Reports; Patterson, D. et al. (2021). *Carbon Considerations for Large Language Model Training*. arXiv:2104.10350; AMD 2023 Sustainability Report.
+
+### 3. Embodied datacenter (construction)
+
+```
+embodied_dc_kg = 7 × mw × 1 000 × (hours / 8760)
+```
+
+The 7 kg CO₂/kW/year factor is the LBNL + industry LCA median for datacenter construction amortized over a 20-year facility life. It covers structural steel, concrete, cooling plant, and power infrastructure but excludes IT equipment (captured in the hardware term above).
+
+**Source:** Lawrence Berkeley National Laboratory, *United States Data Center Energy Usage Report* (2016); industry LCA studies (Uptime Institute, Green Grid).
+
+### Key insight
+
+With clean operational power — France at ~40 g CO₂/kWh — embodied carbon becomes the dominant share. Operational electricity drops to roughly 50% of total lifecycle carbon. **Once the grid is clean enough, hardware manufacturing is where the carbon lives.** This is the core argument for hardware efficiency and longer GPU service lives in low-carbon regions.
+
+---
+
 ## Bidding-zone aggregation
 
 ENTSO-E data is organized by bidding zone, not by country. Several countries span multiple zones:
@@ -196,6 +281,10 @@ Cross-border flow queries use the primary bidding zone only. This is a known sim
 
 7. **ENTSO-E day-ahead generation forecast availability varies by country.** Where it is not published, the forecast panel falls back to the naive seasonal baseline and marks the source accordingly.
 
+8. **LCA embodied values carry ±30% uncertainty.** GPU and datacenter manufacturing emissions are derived from incomplete public disclosures. All LCA hardware figures should be treated as order-of-magnitude estimates; the uncertainty band is wide enough that operational and embodied carbon could swap rank for mid-carbon grids.
+
+9. **Time-of-day optimization assumes contiguously interruptible workloads.** The best-window calculation finds the optimal N-hour block in a 24-hour forecast. Real workloads that cannot pause mid-run, or that require checkpointing infrastructure, may not be able to exploit the full savings delta shown.
+
 ---
 
 ## Citations
@@ -205,3 +294,7 @@ Cross-border flow queries use the primary bidding zone only. This is a known sim
 - **Ember European Electricity Review (2025):** Ember, *European Electricity Review 2025*. Country-level generation mix context. [https://ember-climate.org/insights/research/european-electricity-review-2025/](https://ember-climate.org/insights/research/european-electricity-review-2025/)
 - **Eurostat Energy Statistics:** Eurostat, *Energy Statistics — Supply, Transformation, Consumption*. Cross-check for annual generation mix. [https://ec.europa.eu/eurostat/statistics-explained/index.php/Energy_statistics_-_supply,_transformation_and_consumption](https://ec.europa.eu/eurostat/statistics-explained/index.php/Energy_statistics_-_supply,_transformation_and_consumption)
 - **IEA Energy Statistics Manual:** IEA, *Energy Statistics Manual*, 2021. Physical-content Primary Energy Factor convention. [https://www.iea.org/data-and-statistics](https://www.iea.org/data-and-statistics)
+- **Patterson et al. (2021):** Patterson, D. et al. *Carbon Considerations for Large Language Model Training*. arXiv:2104.10350. GPU embodied carbon and operational carbon methodology.
+- **NVIDIA ESG Reports:** NVIDIA Corporation, *Corporate Sustainability / ESG Reports* (2022–2024). GPU product carbon footprint disclosures.
+- **AMD Sustainability Filing:** AMD, *2023 Corporate Responsibility Summary*. GPU embodied CO₂ estimates for MI300X-class hardware.
+- **LBNL Datacenter Energy Report:** Shehabi, A. et al. *United States Data Center Energy Usage Report*. Lawrence Berkeley National Laboratory, 2016. Datacenter embodied carbon factor (7 kg CO₂/kW/year).

@@ -2,7 +2,7 @@
 
 > **Where in Europe should AI compute run — right now? The answer changes every hour.**
 
-An opinionated, live dashboard that scores 35 European countries on a **Compute Siting Score (CSS)** combining carbon intensity, cost, renewable share, and price stability, then lets you simulate a training or inference workload against today's grid conditions.
+An opinionated, live dashboard that scores 35 European countries on a **Compute Siting Score (CSS)** combining carbon intensity, cost, renewable share, and price stability, then lets you simulate a training or inference workload against today's grid conditions — **including when to run it and its full lifecycle carbon**.
 
 **Live data** via the ENTSO-E Transparency Platform. **IPCC AR5** emission factors. **EU ETS** carbon price internalized into the cost dimension. **Per-country latency penalty** for inference workloads. **Shareable URL permalinks** for every scenario.
 
@@ -61,6 +61,8 @@ pytest tests/ -v
 | `GET /api/forecast?country=FR` | 24 h CO₂ + price forecast |
 | `GET /api/eval?country=FR&metric=co2` | MAPE of market forecast vs naive baseline |
 | `GET /api/briefing?country=FR&workload=training` | Structured analyst note (headline + 3 bullets + risk flag) |
+| `GET /api/time-of-day?country=FR&hours=6` | Best/worst 6-hour window in the 24 h forecast; savings delta |
+| `GET /api/lca?country=FR&mw=10&hours=6&hardware=H100` | Full lifecycle CO₂: operational + embodied hardware + embodied datacenter |
 
 ## What this demonstrates
 
@@ -70,7 +72,16 @@ This is a deliberate portfolio piece for **solutions-engineer, product managemen
 - **Technical fluency**: live data integration, multi-source aggregation (multi-zone bidding zones), caching, structured API, deployed on Render.
 - **Applied AI**: structured Gemini output, pragmatic RAG over curated pull-quotes, forecast evaluation against a naive baseline.
 - **Domain credibility**: IPCC AR5 citations, IEA PEF conventions, EU ETS carbon pricing, bidding-zone caveats acknowledged and footnoted.
+- **LCA literacy**: operational CO₂ is one piece; full lifecycle includes embodied hardware (GPU manufacturing, amortized) and datacenter buildout.
 - **Narrative**: ties to `gpu_industry` strategic analysis — the dashboard is the operational layer; the analysis is the strategic layer.
+
+## Decision-support features
+
+Three features added in Plan C turn the dashboard from a scoring tool into an actionable decision layer:
+
+- **Time-of-day optimization**: given a 24 h CO₂ forecast and a workload duration, the simulator sweeps every window and surfaces the best and worst start times — with a savings-delta in kg CO₂ and percentage.
+- **Deferred batch economics**: a product-concept panel illustrating what an off-peak inference tier could look like — the avoided-carbon and cost case for scheduling interruptible workloads outside peak-demand windows.
+- **Full lifecycle carbon (LCA)**: an Operational / Full-LCA toggle and hardware selector (A100, H100, H200, B200, MI300X, Groq-LPU) that breaks total carbon into three components — operational electricity, embodied hardware (GPU manufacturing amortized over service life), and embodied datacenter buildout.
 
 ## Author
 
