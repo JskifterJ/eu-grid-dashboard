@@ -9,10 +9,12 @@ from app.cache import Cache
 from app.entso import get_entso_client, AREA_CODES, COUNTRY_NAMES
 from app.ai import get_ai_briefing
 from app.briefing import get_structured_briefing
+from app.lca import lca_breakdown, GPU_EMBODIED_KG_CO2
+from app.time_of_day import build_schedule
 from app.models import (
     GenerationData, PriceData, FlowData, GridSummary, OverviewData,
     CSSBreakdown, RankingEntry, SimulationResult, ForecastSeries, EvalResult,
-    StructuredBriefing,
+    StructuredBriefing, LCABreakdown, TimeOfDayResult,
 )
 from app.scoring import (
     CountryMetrics, compute_css, rank_countries,
@@ -34,6 +36,8 @@ forecast_cache = Cache(ttl_seconds=900)
 ranking_cache = Cache(ttl_seconds=900)
 briefing_cache = Cache(ttl_seconds=3600)
 eval_cache = Cache(ttl_seconds=21600)  # 6 hours
+lca_cache = Cache(ttl_seconds=900)
+tod_cache = Cache(ttl_seconds=900)
 
 SUPPORTED_COUNTRIES = set(AREA_CODES.keys())
 _LIVE = bool(os.environ.get("ENTSO_API_KEY", "").strip())
@@ -345,6 +349,7 @@ def get_simulate(
     hub: str = Query("DE"),
     weights: Optional[str] = Query(None),
     carbon_price: Optional[float] = Query(DEFAULT_CARBON_PRICE_EUR_PER_TCO2),
+    lca: bool = Query(False),
 ):
     _validate_country(country)
     _validate_country(hub)
@@ -377,6 +382,60 @@ def get_simulate(
         forecast=forecast,
         css_results=css,
     )
+    if lca:
+        gen = _get_generation(country)
+        result.lca = lca_breakdown(
+            mw=mw, hours=hours, co2_g_per_kwh=gen.co2_intensity,
+            hardware="H100", pue=None, life_years=3, country=country,
+        )
+    return result
+
+
+@router.get("/api/lca", response_model=LCABreakdown)
+def get_lca(
+    country: str = Query(...),
+    mw: float = Query(..., gt=0),
+    hours: float = Query(..., gt=0),
+    hardware: str = Query("H100"),
+    pue: Optional[float] = Query(None),
+    life_years: int = Query(3, ge=1, le=10),
+):
+    _validate_country(country)
+    if hardware not in GPU_EMBODIED_KG_CO2:
+        raise HTTPException(400, f"hardware must be one of {sorted(GPU_EMBODIED_KG_CO2)}")
+
+    cache_key = f"lca:{country}:{mw}:{hours}:{hardware}:{pue}:{life_years}"
+    cached = lca_cache.get(cache_key)
+    if cached:
+        return cached
+
+    gen = _get_generation(country)
+    breakdown = lca_breakdown(
+        mw=mw, hours=hours, co2_g_per_kwh=gen.co2_intensity,
+        hardware=hardware, pue=pue, life_years=life_years, country=country,
+    )
+    lca_cache.set(cache_key, breakdown)
+    return breakdown
+
+
+@router.get("/api/time-of-day", response_model=TimeOfDayResult)
+def get_time_of_day(
+    country: str = Query(...),
+    mw: float = Query(..., gt=0),
+    hours: float = Query(..., gt=0),
+):
+    _validate_country(country)
+    cache_key = f"tod:{country}:{mw}:{hours}"
+    cached = tod_cache.get(cache_key)
+    if cached:
+        return cached
+
+    forecast = get_forecast(country=country)
+    try:
+        result = build_schedule(forecast, mw=mw, workload_hours=hours)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    tod_cache.set(cache_key, result)
     return result
 
 

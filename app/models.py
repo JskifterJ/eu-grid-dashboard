@@ -102,6 +102,7 @@ class SimulationResult(BaseModel):
     hub_cost_eur: float
     css_percentile: int
     latency_penalty: float
+    lca: Optional["LCABreakdown"] = None
 
 
 class EvalResult(BaseModel):

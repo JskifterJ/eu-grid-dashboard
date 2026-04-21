@@ -203,3 +203,63 @@ def test_eval_endpoint_price_metric(client):
 def test_eval_endpoint_unknown_metric_returns_400(client):
     r = client.get("/api/eval?country=FR&metric=temperature")
     assert r.status_code == 400
+
+
+def test_lca_endpoint_default_hardware(client):
+    with patch("app.routes._LIVE", False):
+        r = client.get("/api/lca?country=FR&mw=10&hours=6").json()
+    assert r["hardware"] == "H100"
+    assert r["workload_mw"] == 10.0
+    assert r["workload_hours"] == 6.0
+    assert r["total_kg"] > 0
+    assert r["operational_co2_kg"] > 0
+    assert r["embodied_hardware_kg"] > 0
+    assert r["embodied_datacenter_kg"] > 0
+
+
+def test_lca_endpoint_custom_hardware(client):
+    with patch("app.routes._LIVE", False):
+        h100 = client.get("/api/lca?country=FR&mw=10&hours=6&hardware=H100").json()
+        b200 = client.get("/api/lca?country=FR&mw=10&hours=6&hardware=B200").json()
+    assert h100["hardware"] == "H100"
+    assert b200["hardware"] == "B200"
+    assert h100["embodied_hardware_kg"] != b200["embodied_hardware_kg"]
+
+
+def test_lca_endpoint_rejects_unknown_hardware(client):
+    r = client.get("/api/lca?country=FR&mw=10&hours=6&hardware=FakeGPU")
+    assert r.status_code == 400
+
+
+def test_lca_endpoint_country_pue_default(client):
+    with patch("app.routes._LIVE", False):
+        no = client.get("/api/lca?country=NO&mw=10&hours=6").json()
+        it = client.get("/api/lca?country=IT&mw=10&hours=6").json()
+    # Nordic NO has PUE ~1.1, hot-climate IT ~1.4 → NO has less cooling overhead
+    assert no["pue"] < it["pue"]
+    assert no["cooling_overhead_kg"] < it["cooling_overhead_kg"]
+
+
+def test_time_of_day_endpoint_returns_24h_and_windows(client):
+    with patch("app.routes._LIVE", False):
+        r = client.get("/api/time-of-day?country=FR&mw=10&hours=6").json()
+    assert r["country"] == "FR"
+    assert len(r["hours"]) == 24
+    assert r["best_window"]["avg_co2_g_per_kwh"] <= r["worst_window"]["avg_co2_g_per_kwh"]
+    assert r["co2_savings_pct"] >= 0
+    assert r["cost_savings_pct"] >= 0
+
+
+def test_time_of_day_rejects_workload_over_24h(client):
+    r = client.get("/api/time-of-day?country=FR&mw=10&hours=25")
+    assert r.status_code == 400
+
+
+def test_simulate_endpoint_with_lca_flag(client):
+    with patch("app.routes._LIVE", False):
+        without = client.get("/api/simulate?country=FR&mw=10&hours=6&workload=training").json()
+        with_lca = client.get("/api/simulate?country=FR&mw=10&hours=6&workload=training&lca=true").json()
+    assert "lca" not in without or without["lca"] is None
+    assert with_lca["lca"] is not None
+    assert with_lca["lca"]["total_kg"] > 0
+    assert with_lca["lca"]["operational_co2_kg"] > 0
