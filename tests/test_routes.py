@@ -156,3 +156,27 @@ def test_css_default_carbon_price_is_75(client):
     with patch("app.routes._LIVE", False):
         body = client.get("/api/css?country=FR").json()
     assert body["carbon_price_eur_per_tco2"] == 75.0
+
+
+def test_ranking_with_workload_inference_western_shifts_iberian_down(client):
+    with patch("app.routes._LIVE", False):
+        infer_w = client.get("/api/ranking?workload=inference&region=western").json()
+        infer_n = client.get("/api/ranking?workload=inference&region=northern").json()
+    def rank_of(payload, country):
+        for i, c in enumerate(payload["countries"]):
+            if c["country"] == country: return i
+        return None
+    # Portugal/Spain rank lower (higher index) under northern serving region than western
+    assert rank_of(infer_n, "PT") > rank_of(infer_w, "PT") or rank_of(infer_n, "ES") > rank_of(infer_w, "ES")
+
+
+def test_ranking_inference_without_region_returns_400(client):
+    r = client.get("/api/ranking?workload=inference")
+    assert r.status_code == 400
+
+
+def test_ranking_workload_overrides_weights_param(client):
+    with patch("app.routes._LIVE", False):
+        r = client.get("/api/ranking?workload=training&weights=cost").json()
+    # Workload preset wins — assert response weights match training's preset (40/30/20/10)
+    assert r["weights"] == {"carbon": 40, "cost": 30, "renewable": 20, "stability": 10}

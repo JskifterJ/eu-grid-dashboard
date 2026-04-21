@@ -15,6 +15,7 @@ from app.scoring import (
     CountryMetrics, compute_css, rank_countries,
     DEFAULT_WEIGHTS, PRESET_GREEN, PRESET_COST, Weights,
     DEFAULT_CARBON_PRICE_EUR_PER_TCO2, carbon_internalized_price,
+    WORKLOAD_PRESETS, weights_for_workload, apply_per_country_latency_penalty,
 )
 from app.simulator import simulate, SimulatorInputs
 from app.forecast import get_forecast_client
@@ -59,6 +60,22 @@ def _parse_weights(s: Optional[str]) -> Weights:
     if len(parts) != 4 or sum(parts) != 100:
         raise HTTPException(status_code=400, detail="weights must sum to 100 across 4 dimensions")
     return {"carbon": parts[0], "cost": parts[1], "renewable": parts[2], "stability": parts[3]}
+
+
+VALID_REGIONS = {"central", "western", "northern", "southern", "iberian"}
+
+
+def _resolve_weights(workload: Optional[str], weights: Optional[str]) -> Weights:
+    if workload:
+        if workload not in WORKLOAD_PRESETS:
+            raise HTTPException(400, f"workload must be one of {sorted(WORKLOAD_PRESETS)}")
+        return weights_for_workload(workload)
+    return _parse_weights(weights)
+
+
+def _validate_region(region: Optional[str]) -> None:
+    if region is not None and region not in VALID_REGIONS:
+        raise HTTPException(400, f"region must be one of {sorted(VALID_REGIONS)}")
 
 
 def _build_grid(carbon_price: float = DEFAULT_CARBON_PRICE_EUR_PER_TCO2) -> list[CountryMetrics]:
@@ -198,18 +215,25 @@ def get_summary(country: str = Query(...)):
 def get_css(
     country: str = Query(...),
     weights: Optional[str] = Query(None),
+    workload: Optional[str] = Query(None),
+    region: Optional[str] = Query(None),
     carbon_price: Optional[float] = Query(DEFAULT_CARBON_PRICE_EUR_PER_TCO2),
 ):
     _validate_country(country)
-    w = _parse_weights(weights)
+    if workload == "inference" and not region:
+        raise HTTPException(400, "inference workload requires region")
+    _validate_region(region)
+    w = _resolve_weights(workload, weights)
     effective_carbon_price = carbon_price if carbon_price is not None else DEFAULT_CARBON_PRICE_EUR_PER_TCO2
-    cache_key = f"css:{country}:{sorted(w.items())}:{effective_carbon_price}"
+    cache_key = f"css:{country}:{sorted(w.items())}:{workload}:{region}:{effective_carbon_price}"
     cached = ranking_cache.get(cache_key)
     if cached:
         return cached
 
     grid = _build_grid(effective_carbon_price)
     results = compute_css(grid, w)
+    if workload == "inference":
+        results = apply_per_country_latency_penalty(results, region)
     target = next((r for r in results if r.country == country), None)
     if target is None:
         raise HTTPException(status_code=404, detail=f"No metrics for {country}")
@@ -233,17 +257,25 @@ def get_css(
 @router.get("/api/ranking")
 def get_ranking(
     weights: Optional[str] = Query(None),
+    workload: Optional[str] = Query(None),
+    region: Optional[str] = Query(None),
     carbon_price: Optional[float] = Query(DEFAULT_CARBON_PRICE_EUR_PER_TCO2),
 ):
-    w = _parse_weights(weights)
+    if workload == "inference" and not region:
+        raise HTTPException(400, "inference workload requires region")
+    _validate_region(region)
+    w = _resolve_weights(workload, weights)
     effective_carbon_price = carbon_price if carbon_price is not None else DEFAULT_CARBON_PRICE_EUR_PER_TCO2
-    cache_key = f"ranking:{sorted(w.items())}:{effective_carbon_price}"
+    cache_key = f"ranking:{sorted(w.items())}:{workload}:{region}:{effective_carbon_price}"
     cached = ranking_cache.get(cache_key)
     if cached:
         return cached
 
     grid = _build_grid(effective_carbon_price)
-    results = rank_countries(compute_css(grid, w))
+    results = compute_css(grid, w)
+    if workload == "inference":
+        results = apply_per_country_latency_penalty(results, region)
+    results = rank_countries(results)
     payload = {
         "countries": [
             RankingEntry(
@@ -257,6 +289,8 @@ def get_ranking(
             ).model_dump() for r in results
         ],
         "weights": w,
+        "workload": workload,
+        "region": region,
         "carbon_price_eur_per_tco2": effective_carbon_price,
     }
     ranking_cache.set(cache_key, payload)
@@ -317,7 +351,7 @@ def get_simulate(
         raise HTTPException(status_code=400, detail="region must be central|western|northern|southern|iberian")
 
     effective_carbon_price = carbon_price if carbon_price is not None else DEFAULT_CARBON_PRICE_EUR_PER_TCO2
-    w = _parse_weights(weights)
+    w = _resolve_weights(workload, weights)
     grid = _build_grid(effective_carbon_price)
     css = compute_css(grid, w)
     forecast = get_forecast(country=country)
