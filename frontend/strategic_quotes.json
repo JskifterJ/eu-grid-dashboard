@@ -1,0 +1,76 @@
+{
+  "cards": [
+    {
+      "id": "datacenter-demand",
+      "title": "Europe's AI power problem",
+      "subtitle": "Datacenter electricity",
+      "stat": "415 → 945 TWh",
+      "stat_sub": "Global datacenter demand, 2024 → 2030 (IEA Base Case)",
+      "quote": "AI workloads grow +30% per year vs +9% for non-AI. AI servers rise from 21% of datacenter electricity to 44% by 2030. By 2035 (IEA lift-off scenario), datacenters reach ~4.4% of global electricity — a full Japan-sized grid.",
+      "source": "IEA · Energy & AI 2025",
+      "href": "https://jskifterj.github.io/gpu_industry/pres3_gpu-trends-positioning-deck.html",
+      "tags": ["macro", "training", "inference"],
+      "accent": "#e69b7b"
+    },
+    {
+      "id": "power-constraint",
+      "title": "The grid is the bottleneck",
+      "subtitle": "Interconnection queue",
+      "stat": "5+ years",
+      "stat_sub": "Median US grid interconnection queue (Gartner, Nov 2024)",
+      "quote": "Procuring GPUs takes months. Connecting to the grid takes 5+ years. Transformer and cable lead times doubled in three years. 40% of AI datacenters will be power-constrained by 2027. Clean power available NOW — not in 5 years — is a genuine moat.",
+      "source": "Gartner · AI Infrastructure 2024",
+      "href": "https://jskifterj.github.io/gpu_industry/pres3_gpu-trends-positioning-deck.html",
+      "tags": ["macro", "siting", "training"],
+      "accent": "#d1b06b"
+    },
+    {
+      "id": "inference-dominance",
+      "title": "Inference eats the world",
+      "subtitle": "Workload shift",
+      "stat": "280×",
+      "stat_sub": "Inference is now 280× cheaper per call. DeepSeek R1 trained −97% cheaper than GPT-4o. API traffic rose 10–40× in weeks.",
+      "quote": "As models get cheaper to train and serve, usage explodes. The efficiency → cost → adoption → demand loop means more infrastructure, not less. Inference siting — clean, cheap, and close to users — is the new strategic battleground.",
+      "source": "Inference economics · gpu_industry v10",
+      "href": "https://jskifterj.github.io/gpu_industry/learning_inference_compute_master.html",
+      "tags": ["inference", "macro"],
+      "accent": "#9cc98a"
+    },
+    {
+      "id": "memory-bound",
+      "title": "Memory bandwidth, not FLOPS",
+      "subtitle": "Hardware reality",
+      "stat": "~85%",
+      "stat_sub": "Share of H100 inference time spent waiting on HBM (Llama 3.1 70B)",
+      "quote": "Adding TFLOPS alone doesn't help. A 70B inference run on H100 is memory-bandwidth-limited 85% of the time. That's why inference silicon is fragmenting: Groq LPU for deterministic latency, MI300X for large-context (2.4× more HBM than H100), Blackwell CPX for 1T-param throughput.",
+      "source": "Memory-bound inference · gpu_industry strategy",
+      "href": "https://jskifterj.github.io/gpu_industry/strategy_inference_economics.html",
+      "tags": ["inference", "hardware"],
+      "accent": "#8db6d1"
+    },
+    {
+      "id": "value-chain",
+      "title": "Where the margin lives",
+      "subtitle": "Value chain",
+      "stat": "L5 serving",
+      "stat_sub": "The primary revenue battleground is shifting from raw aggregation to inference-serving platforms.",
+      "quote": "Bare-metal GPU rental is a commodity. Orchestration (SUNK goodput 96%, Soperator open-source) narrows the moat. The durable advantage sits in L5 inference-serving platforms that capture sticky OpEx — where the operational knowledge of feeding real-time traffic compounds.",
+      "source": "Value chain master · gpu_industry",
+      "href": "https://jskifterj.github.io/gpu_industry/strategy_value_chain_master.html",
+      "tags": ["strategy", "inference"],
+      "accent": "#c4a5d1"
+    },
+    {
+      "id": "h100-flood",
+      "title": "H100 flood + B200 lock-in",
+      "subtitle": "Procurement timing",
+      "stat": "2025–26",
+      "stat_sub": "CoreWeave's 2022–2023 H100 contracts expire 2025–26, releasing fleet into mid-market.",
+      "quote": "Procurement timing is a material cost lever. Buy B200 capacity today for frontier training; use the H100 flood for cost-effective inference PoCs. Interconnection + grid constraints mean the capacity you can connect to clean power matters more than the silicon on the shelf.",
+      "source": "Competitor intelligence · gpu_industry",
+      "href": "https://jskifterj.github.io/gpu_industry/strategy_competitor_intelligence.html",
+      "tags": ["strategy", "hardware"],
+      "accent": "#c69a56"
+    }
+  ]
+}
