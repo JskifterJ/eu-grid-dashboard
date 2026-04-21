@@ -77,6 +77,21 @@ AREA_CODES: dict[str, list[str]] = {
     "GR": ["GR"],
     "IE": ["IE_SEM"],
     "HU": ["HU"],
+    "EE": ["EE"],
+    "LV": ["LV"],
+    "LT": ["LT"],
+    "SK": ["SK"],
+    "SI": ["SI"],
+    "HR": ["HR"],
+    "BG": ["BG"],
+    "RS": ["RS"],
+    "BA": ["BA"],
+    "ME": ["ME"],
+    "MK": ["MK"],
+    "AL": ["AL"],
+    "IS": ["IS"],
+    "CY": ["CY"],
+    "LU": ["LU"],
 }
 
 
@@ -89,6 +104,11 @@ COUNTRY_NAMES: dict[str, str] = {
     "AT": "Austria", "NL": "Netherlands", "BE": "Belgium", "PL": "Poland",
     "ES": "Spain", "IT": "Italy", "CZ": "Czech Republic", "PT": "Portugal",
     "RO": "Romania", "GR": "Greece", "IE": "Ireland", "HU": "Hungary",
+    "EE": "Estonia", "LV": "Latvia", "LT": "Lithuania",
+    "SK": "Slovakia", "SI": "Slovenia", "HR": "Croatia",
+    "BG": "Bulgaria", "RS": "Serbia", "BA": "Bosnia & Herzegovina",
+    "ME": "Montenegro", "MK": "North Macedonia", "AL": "Albania",
+    "IS": "Iceland", "CY": "Cyprus", "LU": "Luxembourg",
 }
 
 

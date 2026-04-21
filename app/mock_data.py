@@ -25,6 +25,21 @@ MOCK_GENERATION: dict[str, dict[str, float]] = {
     "GR": {"Gas": 3.5, "Wind": 2.5, "Solar": 2.0, "Hydro": 1.2, "Lignite": 1.0},
     "IE": {"Wind": 2.8, "Gas": 1.5, "Biomass": 0.2, "Hydro": 0.2},
     "HU": {"Gas": 2.5, "Nuclear": 2.0, "Solar": 0.8, "Wind": 0.3, "Biomass": 0.3},
+    "EE": {"Oil Shale": 1.2, "Wind": 0.4, "Biomass": 0.3, "Solar": 0.1},
+    "LV": {"Hydro": 0.8, "Biomass": 0.4, "Wind": 0.3, "Gas": 0.2},
+    "LT": {"Wind": 0.6, "Solar": 0.3, "Gas": 0.2, "Biomass": 0.2, "Hydro": 0.1},
+    "SK": {"Nuclear": 1.8, "Hydro": 0.8, "Gas": 0.5, "Solar": 0.3, "Wind": 0.05},
+    "SI": {"Nuclear": 0.7, "Hydro": 0.6, "Coal": 0.3, "Solar": 0.2, "Gas": 0.1},
+    "HR": {"Hydro": 1.2, "Gas": 0.6, "Wind": 0.5, "Solar": 0.3, "Coal": 0.2},
+    "BG": {"Nuclear": 1.6, "Lignite": 1.5, "Hydro": 0.5, "Wind": 0.3, "Solar": 0.5},
+    "RS": {"Lignite": 3.2, "Hydro": 1.4, "Wind": 0.3, "Gas": 0.2, "Solar": 0.1},
+    "BA": {"Coal": 1.5, "Hydro": 1.2, "Wind": 0.1, "Solar": 0.1},
+    "ME": {"Hydro": 0.5, "Coal": 0.2, "Wind": 0.1},
+    "MK": {"Coal": 0.8, "Hydro": 0.3, "Wind": 0.1, "Gas": 0.1},
+    "AL": {"Hydro": 1.3, "Solar": 0.05},
+    "IS": {"Hydro": 1.5, "Geothermal": 0.7},
+    "CY": {"Oil": 0.7, "Solar": 0.2, "Wind": 0.05},
+    "LU": {"Gas": 0.2, "Solar": 0.1, "Hydro": 0.1, "Biomass": 0.1, "Wind": 0.05},
 }
 
 RENEWABLE_DISPLAY = {"Wind", "Solar", "Hydro", "Hydro Reservoir", "Pumped Storage", "Biomass", "Other Renewable", "Geothermal"}
@@ -41,6 +56,9 @@ MOCK_PRICES: dict[str, float] = {
     "GB": 95.0, "FI": 55.0, "CH": 70.0, "AT": 74.0, "NL": 80.0,
     "BE": 76.0, "PL": 68.0, "ES": 58.0, "IT": 88.0, "CZ": 72.0,
     "PT": 55.0, "RO": 62.0, "GR": 85.0, "IE": 90.0, "HU": 70.0,
+    "EE": 88.0, "LV": 78.0, "LT": 82.0, "SK": 73.0, "SI": 80.0,
+    "HR": 84.0, "BG": 92.0, "RS": 86.0, "BA": 88.0, "ME": 80.0,
+    "MK": 92.0, "AL": 73.0, "IS": 42.0, "CY": 130.0, "LU": 90.0,
 }
 
 MOCK_FLOWS: dict[str, list[tuple[str, float, str]]] = {
@@ -64,6 +82,21 @@ MOCK_FLOWS: dict[str, list[tuple[str, float, str]]] = {
     "GR": [("Bulgaria", 0.4, "import"), ("Italy", 0.3, "export")],
     "IE": [("United Kingdom", 0.4, "import")],
     "HU": [("Romania", 0.5, "import"), ("Austria", 0.3, "import"), ("Slovakia", 0.4, "export")],
+    "EE": [("Latvia", 0.2, "export"), ("Finland", 0.3, "import")],
+    "LV": [("Estonia", 0.2, "import"), ("Lithuania", 0.1, "export")],
+    "LT": [("Latvia", 0.1, "import"), ("Sweden", 0.3, "import"), ("Poland", 0.1, "import")],
+    "SK": [("Hungary", 0.4, "import"), ("Czech Republic", 0.2, "export")],
+    "SI": [("Croatia", 0.2, "export"), ("Italy", 0.3, "export"), ("Austria", 0.2, "import")],
+    "HR": [("Slovenia", 0.2, "import"), ("Hungary", 0.2, "import"), ("Bosnia & Herzegovina", 0.1, "export")],
+    "BG": [("Romania", 0.7, "import"), ("Greece", 0.4, "export"), ("Serbia", 0.2, "export")],
+    "RS": [("Bosnia & Herzegovina", 0.2, "import"), ("Hungary", 0.3, "export"), ("Bulgaria", 0.2, "import")],
+    "BA": [("Croatia", 0.1, "import"), ("Serbia", 0.2, "export"), ("Montenegro", 0.1, "export")],
+    "ME": [("Bosnia & Herzegovina", 0.1, "import"), ("Italy", 0.2, "export")],
+    "MK": [("Bulgaria", 0.1, "import"), ("Greece", 0.1, "export"), ("Serbia", 0.1, "import")],
+    "AL": [("North Macedonia", 0.1, "export"), ("Greece", 0.1, "export")],
+    "IS": [],
+    "CY": [],
+    "LU": [("Germany", 0.2, "import"), ("Belgium", 0.1, "import"), ("France", 0.05, "import")],
 }
 
 COUNTRY_NAMES: dict[str, str] = {
@@ -72,6 +105,11 @@ COUNTRY_NAMES: dict[str, str] = {
     "AT": "Austria", "NL": "Netherlands", "BE": "Belgium", "PL": "Poland",
     "ES": "Spain", "IT": "Italy", "CZ": "Czech Republic", "PT": "Portugal",
     "RO": "Romania", "GR": "Greece", "IE": "Ireland", "HU": "Hungary",
+    "EE": "Estonia", "LV": "Latvia", "LT": "Lithuania",
+    "SK": "Slovakia", "SI": "Slovenia", "HR": "Croatia",
+    "BG": "Bulgaria", "RS": "Serbia", "BA": "Bosnia & Herzegovina",
+    "ME": "Montenegro", "MK": "North Macedonia", "AL": "Albania",
+    "IS": "Iceland", "CY": "Cyprus", "LU": "Luxembourg",
 }
 
 

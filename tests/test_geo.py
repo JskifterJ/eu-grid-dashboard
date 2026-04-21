@@ -40,3 +40,10 @@ def test_latency_penalty_monotone_in_distance():
     p_close = latency_penalty("DE", "central")
     p_far = latency_penalty("PT", "northern")
     assert p_far > p_close
+
+
+def test_expanded_countries_have_centroids():
+    expected_new = {"EE", "LV", "LT", "SK", "SI", "HR", "BG", "RS", "BA",
+                    "ME", "MK", "AL", "IS", "CY", "LU"}
+    for c in expected_new:
+        assert c in COUNTRY_CENTROIDS, f"missing centroid for {c}"

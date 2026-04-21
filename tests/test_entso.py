@@ -68,3 +68,16 @@ def test_country_names_covers_all():
     from app.entso import COUNTRY_NAMES
     for c in AREA_CODES:
         assert c in COUNTRY_NAMES
+
+
+def test_expanded_country_set_includes_balkans_and_baltics():
+    from app.entso import COUNTRY_NAMES
+    expected_new = {"EE", "LV", "LT", "SK", "SI", "HR", "BG", "RS", "BA",
+                    "ME", "MK", "AL", "IS", "CY", "LU"}
+    for c in expected_new:
+        assert c in AREA_CODES, f"missing country {c}"
+        assert c in COUNTRY_NAMES, f"missing name for {c}"
+
+
+def test_total_country_count_around_35():
+    assert 33 <= len(AREA_CODES) <= 38
