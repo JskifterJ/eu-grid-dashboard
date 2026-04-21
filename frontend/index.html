@@ -14,6 +14,7 @@
   <script src="hero.js" defer></script>
   <script src="ranking.js" defer></script>
   <script src="simulator.js" defer></script>
+  <script src="deferred.js" defer></script>
   <script src="forecast.js" defer></script>
   <script src="strategic.js" defer></script>
   <script src="briefing.js" defer></script>
@@ -271,6 +272,36 @@
           <span><span class="tod-key tod-key-best"></span> optimal start window</span>
           <span><span class="tod-key tod-key-worst"></span> worst window (peak demand)</span>
           <span class="tod-scale">0 <span class="tod-grad"></span> 600 g/kWh</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="deferred-section" id="deferred">
+    <div class="container">
+      <div class="def-header">
+        <div class="def-eyebrow mono">Product concept · deferred agent workloads</div>
+        <h2 class="def-title">What if inference had a night rate?</h2>
+        <p class="def-sub">Modern AI agents produce batchable non-urgent work — research, summarization, code-review, document processing. Queued during the day, run overnight when the grid is clean and the spot price is low, this workload pattern is both cheaper and cleaner. The live numbers below show what an off-peak tier would look like for <span id="def-country-name" class="accent">—</span> today.</p>
+      </div>
+      <div class="def-grid">
+        <div class="def-inputs">
+          <div class="sim-field">
+            <label class="sim-label" for="def-tokens">Token volume</label>
+            <div class="sim-input-wrap"><input id="def-tokens" type="number" class="sim-input" value="1000" min="1" step="100"><span class="sim-unit">M out</span></div>
+          </div>
+          <div class="sim-field">
+            <label class="sim-label" for="def-kwh">Energy per 1M tokens</label>
+            <div class="sim-input-wrap"><input id="def-kwh" type="number" class="sim-input" value="0.30" min="0.01" step="0.01"><span class="sim-unit">kWh</span></div>
+          </div>
+          <div class="sim-field">
+            <label class="sim-label" for="def-discount">Off-peak discount</label>
+            <div class="sim-input-wrap"><input id="def-discount" type="number" class="sim-input" value="30" min="0" max="70" step="5"><span class="sim-unit">%</span></div>
+          </div>
+          <p class="def-note">Defaults model Llama 3.1 70B on H100 (~0.3 kWh/1M tokens, Patterson et al. 2024). The discount is the margin an inference provider could rebate to customers for deferrable workloads.</p>
+        </div>
+        <div class="def-output" id="def-output">
+          <div class="sim-loading">Computing…</div>
         </div>
       </div>
     </div>

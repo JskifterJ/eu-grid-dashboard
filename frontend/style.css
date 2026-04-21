@@ -713,3 +713,52 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015
 }
 
 /* Tooltip-reuse: tod-hour hover populates the shared #tooltip via JS */
+
+.deferred-section { padding: 32px 0; background: var(--bg); border-top: 1px solid var(--border); }
+.def-header { margin-bottom: 20px; max-width: 760px; }
+.def-eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: var(--accent); margin-bottom: 6px; }
+.def-title { font-size: clamp(22px, 3vw, 30px); line-height: 1.2; color: var(--text); margin-bottom: 10px; }
+.def-sub { font-size: 13px; color: var(--muted); line-height: 1.65; }
+.def-sub .accent { color: var(--text); font-weight: 600; }
+
+.def-grid { display: grid; grid-template-columns: 280px 1fr; gap: 22px; }
+@media (max-width: 760px) { .def-grid { grid-template-columns: 1fr; } }
+
+.def-inputs { display: flex; flex-direction: column; gap: 12px; }
+.def-note { font-size: 10.5px; color: var(--dim); line-height: 1.5; font-style: italic; margin-top: 4px; }
+
+.def-output {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-left: 3px solid var(--green); border-radius: var(--radius);
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.def-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; align-items: stretch;
+}
+.def-card {
+  background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.def-card .def-kind {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--dim); font-family: var(--mono);
+}
+.def-card .def-value {
+  font-family: var(--serif); font-size: 26px; line-height: 1;
+  color: var(--text); font-weight: 600; letter-spacing: -0.01em;
+}
+.def-card .def-sub2 {
+  font-size: 11px; color: var(--muted); font-family: var(--mono);
+}
+.def-card.off-peak { border-left: 3px solid var(--green); }
+.def-card.peak { border-left: 3px solid var(--orange); }
+
+.def-verdict {
+  background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--text);
+}
+.def-verdict strong { color: var(--green); }
+.def-verdict em { color: var(--muted); font-style: italic; font-size: 12px; }
