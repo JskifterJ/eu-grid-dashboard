@@ -163,6 +163,10 @@ window.initMap = async function(onCountrySelect) {
     });
   } catch (e) { console.warn('flow web fetch failed:', e); }
 
+  await _loadDatacenters();
+  _renderDatacenters();
+  _wireDatacenterToggles();
+
   // Default: Denmark
   _selectCountry('DK', euroFeatures, onCountrySelect);
 
@@ -243,3 +247,46 @@ window.updateMapTheme = function() {
     // Countries with no CO2 data keep CSS fill via class
   });
 };
+
+const DC_COLORS = { 'hyperscaler': '#58a6ff', 'neocloud': '#d2a8ff', 'ai-factory': '#9cc98a' };
+const DC_RADIUS = { 'hyperscaler': 2.5, 'neocloud': 2.8, 'ai-factory': 3.4 };
+let _datacenters = [];
+const _dcVisible = { 'hyperscaler': true, 'neocloud': true, 'ai-factory': true };
+
+async function _loadDatacenters() {
+  try {
+    const r = await fetch('/datacenters.json');
+    const data = await r.json();
+    _datacenters = data.datacenters || [];
+  } catch (e) { console.warn('dc load failed:', e); }
+}
+
+function _renderDatacenters() {
+  if (!_svgG) return;
+  _svgG.selectAll('.dc-marker').remove();
+  _datacenters.forEach(dc => {
+    if (!_dcVisible[dc.type]) return;
+    const [x, y] = _projection([dc.lon, dc.lat]);
+    if (Number.isNaN(x) || Number.isNaN(y)) return;
+    const g = _svgG.append('g').attr('class', 'dc-marker');
+    g.append('circle')
+      .attr('cx', x).attr('cy', y)
+      .attr('r', DC_RADIUS[dc.type])
+      .attr('fill', DC_COLORS[dc.type])
+      .attr('opacity', 0.85)
+      .attr('stroke', 'rgba(0,0,0,0.4)')
+      .attr('stroke-width', 0.4);
+    g.append('title').text(`${dc.name} · ${dc.operator}${dc.notes ? ' · ' + dc.notes : ''}`);
+  });
+}
+
+function _wireDatacenterToggles() {
+  ['hyperscaler', 'neocloud', 'ai-factory'].forEach(t => {
+    const el = document.getElementById(`dc-toggle-${t}`);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      _dcVisible[t] = el.checked;
+      _renderDatacenters();
+    });
+  });
+}
