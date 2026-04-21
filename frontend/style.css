@@ -201,3 +201,30 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015
 
 #map-svg { cursor: grab; }
 #map-svg:active { cursor: grabbing; }
+
+.tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: 260px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+.tooltip.visible { opacity: 1; }
+.tooltip .tt-title { font-family: var(--serif); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.tooltip .tt-badge { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: 1px; font-family: var(--mono); margin-bottom: 6px; }
+.tooltip .tt-badge.hyper { background: rgba(88,166,255,0.18); color: #8db6d1; }
+.tooltip .tt-badge.neo { background: rgba(210,168,255,0.18); color: #c4a5d1; }
+.tooltip .tt-badge.aif { background: rgba(156,201,138,0.18); color: #9cc98a; }
+.tooltip .tt-row { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+.tooltip .tt-row b { color: var(--text); font-weight: 500; }
+.tooltip .tt-notes { margin-top: 6px; color: var(--muted); font-size: 11px; font-style: italic; }

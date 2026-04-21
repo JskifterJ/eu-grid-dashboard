@@ -262,6 +262,57 @@ const DC_RADIUS = { 'hyperscaler': 2.5, 'neocloud': 2.8, 'ai-factory': 3.4 };
 let _datacenters = [];
 const _dcVisible = { 'hyperscaler': true, 'neocloud': true, 'ai-factory': true };
 
+const _tooltipEl = () => document.getElementById('tooltip');
+
+function _showTooltip(html, event) {
+  const el = _tooltipEl();
+  if (!el) return;
+  el.innerHTML = html;
+  el.classList.add('visible');
+  el.setAttribute('aria-hidden', 'false');
+  _positionTooltip(event);
+}
+
+function _positionTooltip(event) {
+  const el = _tooltipEl();
+  if (!el) return;
+  const pad = 14;
+  const { clientWidth: w, clientHeight: h } = el;
+  let x = event.clientX + pad;
+  let y = event.clientY + pad;
+  if (x + w > window.innerWidth - 4) x = event.clientX - w - pad;
+  if (y + h > window.innerHeight - 4) y = event.clientY - h - pad;
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+}
+
+function _hideTooltip() {
+  const el = _tooltipEl();
+  if (!el) return;
+  el.classList.remove('visible');
+  el.setAttribute('aria-hidden', 'true');
+}
+
+// Expose for reuse across other features (ranking cards etc.)
+window.showTooltip = _showTooltip;
+window.moveTooltip = _positionTooltip;
+window.hideTooltip = _hideTooltip;
+
+const DC_TYPE_LABEL = { 'hyperscaler': 'Hyperscaler', 'neocloud': 'GPU Neocloud', 'ai-factory': 'EU AI Factory' };
+const DC_TYPE_CLASS = { 'hyperscaler': 'hyper', 'neocloud': 'neo', 'ai-factory': 'aif' };
+
+function _dcTooltipHtml(dc) {
+  const flag = (window.MAP_FLAGS && window.MAP_FLAGS[dc.country]) || '';
+  const countryName = (window.MAP_NAMES && window.MAP_NAMES[dc.country]) || dc.country;
+  return `
+    <span class="tt-badge ${DC_TYPE_CLASS[dc.type]}">${DC_TYPE_LABEL[dc.type]}</span>
+    <div class="tt-title">${dc.name}</div>
+    <div class="tt-row"><span>Operator</span><b>${dc.operator}</b></div>
+    <div class="tt-row"><span>Location</span><b>${flag} ${countryName}</b></div>
+    ${dc.notes ? `<div class="tt-notes">${dc.notes}</div>` : ''}
+  `;
+}
+
 async function _loadDatacenters() {
   try {
     const r = await fetch('/datacenters.json');
@@ -284,8 +335,12 @@ function _renderDatacenters() {
       .attr('fill', DC_COLORS[dc.type])
       .attr('opacity', 0.85)
       .attr('stroke', 'rgba(0,0,0,0.4)')
-      .attr('stroke-width', 0.4);
-    g.append('title').text(`${dc.name} · ${dc.operator}${dc.notes ? ' · ' + dc.notes : ''}`);
+      .attr('stroke-width', 0.4)
+      .on('mouseenter', (event) => _showTooltip(_dcTooltipHtml(dc), event))
+      .on('mousemove', (event) => _positionTooltip(event))
+      .on('mouseleave', () => _hideTooltip());
+    // Keep native <title> as fallback accessibility
+    g.append('title').text(`${dc.name} · ${dc.operator}`);
   });
 }
 
