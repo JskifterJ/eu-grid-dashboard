@@ -178,10 +178,10 @@ where `co2` is the hourly forecast array (g CO₂/kWh) and the window wraps only
 
 ```
 savings_pct  = (worst_avg − best_avg) / worst_avg × 100
-kg_avoided   = mw × hours × (worst_avg − best_avg) / 1 000 000
+kg_avoided   = mw × hours × (worst_avg − best_avg)
 ```
 
-`worst_avg` is the mean CO₂ of the worst N-hour window; `best_avg` is the mean of the best. `kg_avoided` converts g CO₂/kWh × GW-hours to kg CO₂ (÷ 10⁶ to go from g to kg, accounting for GW → kW unit alignment).
+`worst_avg` is the mean CO₂ of the worst N-hour window; `best_avg` is the mean of the best. Units: `MW × h × (g/kWh)` = `MWh × g/kWh` = `(1000 kWh) × g/kWh` = `1000 g` = **1 kg** — so the product comes out in kg CO₂ directly.
 
 **Caveat:** Real training runs may require a contiguous window longer than 24 hours. The sweep logic generalizes to any forecast horizon, but the dashboard currently publishes only 24-hour ENTSO-E day-ahead forecasts. Longer windows require a multi-day or medium-term forecast that ENTSO-E does not currently expose via the Transparency Platform.
 
@@ -194,8 +194,10 @@ The simulator's **Full LCA** mode decomposes total workload carbon into three co
 ### 1. Operational (electricity)
 
 ```
-operational_kg = mw × hours × co2_g_per_kwh × pue / 1 000 000
+operational_kg = mw × hours × co2_g_per_kwh × pue
 ```
+
+Units check: `MW × h × g/kWh` = `MWh × g/kWh` = `1000 kWh × g/kWh` = `1000 g` = `1 kg`. So the product gives kg CO₂ directly; PUE simply multiplies the result.
 
 `pue` (Power Usage Effectiveness) scales the compute draw to total datacenter power. PUE defaults by region:
 
