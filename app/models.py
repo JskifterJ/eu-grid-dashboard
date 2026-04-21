@@ -133,3 +133,31 @@ class LCABreakdown(BaseModel):
     embodied_datacenter_kg: float    # building+cooling+power infra, amortized
     total_kg: float                  # operational + embodied_hardware + embodied_datacenter
     operational_share_pct: float     # operational / total × 100
+
+
+class TimeOfDayHour(BaseModel):
+    timestamp: str
+    co2_g_per_kwh: float
+    price_eur_mwh: float
+
+
+class TimeOfDayWindow(BaseModel):
+    start: str
+    end: str
+    avg_co2_g_per_kwh: float
+    avg_price_eur_mwh: float
+    total_co2_kg: float          # for the workload (mw × hours × co2)
+    total_cost_eur: float         # for the workload
+
+
+class TimeOfDayResult(BaseModel):
+    country: str
+    workload_mw: float
+    workload_hours: float
+    hours: list[TimeOfDayHour]   # full 24h timeline
+    best_window: TimeOfDayWindow
+    worst_window: TimeOfDayWindow
+    co2_savings_pct: float       # (worst - best) / worst × 100
+    cost_savings_pct: float
+    co2_savings_kg: float        # worst - best, in kg
+    cost_savings_eur: float
