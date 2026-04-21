@@ -16,6 +16,7 @@
   <script src="simulator.js" defer></script>
   <script src="forecast.js" defer></script>
   <script src="strategic.js" defer></script>
+  <script src="briefing.js" defer></script>
 </head>
 <body>
 
@@ -104,6 +105,23 @@
       <div id="ranking-caption" class="ranking-caption"></div>
       <div id="ranking-list" class="ranking-list">Loading ranking…</div>
       <button type="button" id="ranking-expand-btn" class="ranking-expand-btn">Show all countries</button>
+    </div>
+  </section>
+
+  <section class="analyst-note" id="analyst-note">
+    <div class="container">
+      <div class="note-card" id="note-card">
+        <div class="note-header">
+          <span class="note-eyebrow mono">Analyst note · <span id="note-country">—</span></span>
+          <span class="note-risk" id="note-risk"><span class="note-risk-dot"></span><span class="note-risk-text">—</span></span>
+        </div>
+        <h3 class="note-headline" id="note-headline">Loading…</h3>
+        <ul class="note-bullets" id="note-bullets"></ul>
+        <div class="note-footer">
+          <span id="note-sources" class="note-sources"></span>
+          <span id="note-asof" class="note-asof"></span>
+        </div>
+      </div>
     </div>
   </section>
 
